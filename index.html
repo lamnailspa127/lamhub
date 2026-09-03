@@ -31,7 +31,7 @@
       background: #fff;
     }
     .signature-pad.signed { border-color: #7c3aed; border-style: solid; }
-    .tab-active { color: #7c3aed; }
+    .tab-active { color: #7c3aed; background: #f5f3ff; }
     .fade { animation: fadeIn 0.25s ease; }
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(6px); }
@@ -42,7 +42,7 @@
     input:focus, textarea:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.15); }
   </style>
 </head>
-<body class="min-h-screen pb-24">
+<body class="min-h-screen pb-6">
 
   <!-- ========== EMPLOYEE VIEW ========== -->
   <div id="employee-view" class="hidden min-h-screen bg-gray-100">
@@ -102,25 +102,42 @@
 
   <!-- ========== ADMIN VIEW ========== -->
   <div id="admin-view" class="hidden">
-    <div class="bg-black text-white pt-6 pb-8 px-5 relative overflow-hidden">
+    <!-- Header -->
+    <div class="bg-black text-white pt-6 pb-5 px-5 relative overflow-hidden">
       <div class="absolute inset-0 bg-gradient-to-b from-black to-gray-900"></div>
       <div class="relative z-10">
         <div class="flex justify-center">
-          <img src="logo.jpg" alt="LAM Nail Spa" class="h-24 object-contain rounded-2xl bg-white p-1.5 shadow-lg" />
+          <img src="logo.jpg" alt="LAM Nail Spa" class="h-20 object-contain rounded-2xl bg-white p-1.5 shadow-lg" />
         </div>
-        <h1 class="text-center text-xl font-bold mt-4 tracking-tight">Staff Policy & Training Hub</h1>
+        <h1 class="text-center text-xl font-bold mt-3 tracking-tight">Staff Policy & Training Hub</h1>
         <p class="text-center text-gray-400 text-xs mt-1">Simple • Mobile • Signature Required</p>
       </div>
     </div>
 
-    <div class="px-4 -mt-5 relative z-20">
-      <div class="card p-1.5 flex">
-        <button class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-brand-purple text-white shadow">Admin</button>
-        <button onclick="alert('Staff open their unique confirmation link (copy from Live tab). After confirming they will see Pending, Confirmed and History.')" class="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-600">Employee</button>
+    <!-- TOP TABS (moved from bottom) -->
+    <div class="px-4 -mt-3 relative z-20">
+      <div class="card p-1.5 grid grid-cols-4 gap-1">
+        <button onclick="showPage('dashboard')" data-tab="dashboard" class="tab-btn flex flex-col items-center justify-center py-2.5 rounded-xl text-gray-500">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
+          <span class="text-[10px] font-medium mt-0.5">Dashboard</span>
+        </button>
+        <button onclick="showPage('staff')" data-tab="staff" class="tab-btn flex flex-col items-center justify-center py-2.5 rounded-xl text-gray-500">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          <span class="text-[10px] font-medium mt-0.5">Staff</span>
+        </button>
+        <button onclick="showPage('create')" data-tab="create" class="tab-btn flex flex-col items-center justify-center py-2.5 rounded-xl text-gray-500">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          <span class="text-[10px] font-medium mt-0.5">Create</span>
+        </button>
+        <button onclick="showPage('live')" data-tab="live" class="tab-btn flex flex-col items-center justify-center py-2.5 rounded-xl text-gray-500">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <span class="text-[10px] font-medium mt-0.5">Live</span>
+        </button>
       </div>
     </div>
 
-    <div class="px-4 mt-5">
+    <!-- Pages -->
+    <div class="px-4 mt-4">
       <!-- DASHBOARD -->
       <div id="page-dashboard" class="page fade space-y-3">
         <div class="card p-5 text-center">
@@ -149,15 +166,15 @@
           </h2>
           <div class="space-y-3">
             <input id="emp-name" type="text" placeholder="Employee name" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
-            <input id="emp-email" type="email" placeholder="Email" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
+            <input id="emp-phone" type="tel" placeholder="Phone number" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
             <button onclick="addEmployee()" class="w-full bg-brand-green hover:bg-green-700 text-white font-semibold py-3 rounded-2xl transition">Add</button>
           </div>
         </div>
         <div class="card mt-4 overflow-hidden">
           <div class="grid grid-cols-12 gap-2 px-4 py-3 text-xs font-semibold text-gray-500 border-b border-gray-100">
-            <div class="col-span-3">Name</div>
-            <div class="col-span-5">Email</div>
-            <div class="col-span-4 text-right">Status</div>
+            <div class="col-span-4">Name</div>
+            <div class="col-span-5">Phone</div>
+            <div class="col-span-3 text-right">Status</div>
           </div>
           <div id="staff-list"></div>
           <div id="staff-empty" class="hidden py-10 text-center text-sm text-gray-400">No employees yet</div>
@@ -203,29 +220,7 @@
     </div>
   </div>
 
-  <!-- Bottom Tab Bar (Admin) -->
-  <nav id="bottom-nav" class="hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
-    <div class="max-w-lg mx-auto grid grid-cols-4 h-16">
-      <button onclick="showPage('dashboard')" data-tab="dashboard" class="tab-btn flex flex-col items-center justify-center gap-0.5 text-gray-400">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
-        <span class="text-[10px] font-medium">Dashboard</span>
-      </button>
-      <button onclick="showPage('staff')" data-tab="staff" class="tab-btn flex flex-col items-center justify-center gap-0.5 text-gray-400">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-        <span class="text-[10px] font-medium">Staff</span>
-      </button>
-      <button onclick="showPage('create')" data-tab="create" class="tab-btn flex flex-col items-center justify-center gap-0.5 text-gray-400">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-        <span class="text-[10px] font-medium">Create</span>
-      </button>
-      <button onclick="showPage('live')" data-tab="live" class="tab-btn flex flex-col items-center justify-center gap-0.5 text-gray-400">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-        <span class="text-[10px] font-medium">Live</span>
-      </button>
-    </div>
-  </nav>
-
-  <!-- Policy Detail Modal (Admin) -->
+  <!-- Policy Detail Modal -->
   <div id="modal-detail" class="hidden fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center">
     <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto">
       <div class="sticky top-0 bg-white px-5 pt-5 pb-3 border-b border-gray-100 flex justify-between items-center">
@@ -239,11 +234,27 @@
           <h4 class="font-semibold mb-3">Confirmation Status</h4>
           <div id="detail-status" class="space-y-2"></div>
         </div>
-        <!-- Edit / Delete actions -->
         <div class="flex gap-3 pt-2 border-t border-gray-100">
           <button onclick="startEditPolicy()" class="flex-1 border border-gray-300 text-gray-800 font-semibold py-3 rounded-2xl text-sm">Edit Policy</button>
           <button onclick="deletePolicy()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-2xl text-sm">Delete Policy</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Send SMS Modal (after publish) -->
+  <div id="modal-send-sms" class="hidden fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center">
+    <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[85vh] overflow-y-auto">
+      <div class="sticky top-0 bg-white px-5 pt-5 pb-3 border-b border-gray-100 flex justify-between items-center">
+        <div>
+          <h3 class="font-bold text-lg">Send SMS to Staff</h3>
+          <p class="text-xs text-gray-500 mt-0.5">Tap each button → your Messages app opens → press Send</p>
+        </div>
+        <button onclick="closeSendSms()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-xl">&times;</button>
+      </div>
+      <div class="p-5 space-y-3" id="send-sms-list"></div>
+      <div class="px-5 pb-6">
+        <button onclick="closeSendSms()" class="w-full bg-gray-100 text-gray-700 font-semibold py-3 rounded-2xl">Done</button>
       </div>
     </div>
   </div>
@@ -285,11 +296,12 @@
   <div id="toast" class="hidden fixed top-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-5 py-2.5 rounded-full text-sm font-medium z-50 shadow-lg"></div>
 
   <script>
-    const STORAGE_KEY = 'lam_hub_v2';
+    const STORAGE_KEY = 'lam_hub_v3';
     let currentEmployeeId = null;
     let currentToken = null;
-    let editingPolicyId = null;   // null = create mode, string = edit mode
-    let detailPolicyId = null;    // currently open in detail modal
+    let editingPolicyId = null;
+    let detailPolicyId = null;
+    let lastPublished = null;
 
     function load() {
       try {
@@ -327,23 +339,21 @@
         handleEmployeeLink(token);
       } else {
         document.getElementById('admin-view').classList.remove('hidden');
-        document.getElementById('bottom-nav').classList.remove('hidden');
         showPage('dashboard');
       }
     }
 
-    // ========== ADMIN ==========
     function showPage(name) {
       document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
       document.getElementById('page-' + name).classList.remove('hidden');
       document.querySelectorAll('.tab-btn').forEach(b => {
         b.classList.remove('tab-active', 'text-brand-purple');
-        b.classList.add('text-gray-400');
+        b.classList.add('text-gray-500');
       });
       const active = document.querySelector('[data-tab="' + name + '"]');
       if (active) {
         active.classList.add('tab-active', 'text-brand-purple');
-        active.classList.remove('text-gray-400');
+        active.classList.remove('text-gray-500');
       }
       if (name === 'dashboard') renderDashboard();
       if (name === 'staff') renderStaff();
@@ -378,10 +388,10 @@
       empty.classList.add('hidden');
       list.innerHTML = data.employees.map(e => `
         <div class="grid grid-cols-12 gap-2 px-4 py-3.5 items-center border-b border-gray-50 text-sm">
-          <div class="col-span-3 font-medium text-gray-900 truncate">${escapeHtml(e.name)}</div>
-          <div class="col-span-5 text-gray-500 text-xs truncate">${escapeHtml(e.email || '—')}</div>
-          <div class="col-span-4 text-right">
-            <span class="text-green-600 text-xs font-medium mr-2">Active</span>
+          <div class="col-span-4 font-medium text-gray-900 truncate">${escapeHtml(e.name)}</div>
+          <div class="col-span-5 text-gray-500 text-xs truncate">${escapeHtml(e.phone || '—')}</div>
+          <div class="col-span-3 text-right">
+            <span class="text-green-600 text-xs font-medium mr-1">Active</span>
             <button onclick="deleteEmployee('${e.id}')" class="text-red-500 text-xs font-medium">Delete</button>
           </div>
         </div>
@@ -390,13 +400,14 @@
 
     function addEmployee() {
       const name = document.getElementById('emp-name').value.trim();
-      const email = document.getElementById('emp-email').value.trim();
+      const phone = document.getElementById('emp-phone').value.trim();
       if (!name) { toast('Please enter employee name'); return; }
+      if (!phone) { toast('Please enter phone number'); return; }
       const data = load();
-      data.employees.push({ id: uid(), name, email, createdAt: new Date().toISOString() });
+      data.employees.push({ id: uid(), name, phone, createdAt: new Date().toISOString() });
       save(data);
       document.getElementById('emp-name').value = '';
-      document.getElementById('emp-email').value = '';
+      document.getElementById('emp-phone').value = '';
       renderStaff();
       toast('Employee added');
     }
@@ -464,23 +475,16 @@
       const data = load();
 
       if (editingPolicyId) {
-        // UPDATE existing policy
         const p = data.policies.find(x => x.id === editingPolicyId);
         if (!p) return;
         p.title = title;
         p.content = content;
         p.deadline = deadline || null;
 
-        // Keep existing assignments that are still selected
-        // Add new assignments for newly selected employees
-        const existingEmpIds = p.assignments.map(a => a.employeeId);
-        // Remove assignments for employees that were unchecked (only if still pending)
         p.assignments = p.assignments.filter(a => {
           if (selected.includes(a.employeeId)) return true;
-          // only remove if not yet confirmed
           return a.status === 'confirmed';
         });
-        // Add new ones
         selected.forEach(empId => {
           if (!p.assignments.find(a => a.employeeId === empId)) {
             p.assignments.push({
@@ -501,7 +505,6 @@
         return;
       }
 
-      // CREATE new
       const assignments = selected.map(empId => ({
         employeeId: empId,
         token: uid() + uid(),
@@ -511,20 +514,77 @@
         userAgent: null
       }));
 
-      data.policies.push({
+      const newPolicy = {
         id: uid(),
         title,
         content,
         deadline: deadline || null,
         createdAt: new Date().toISOString(),
         assignments
-      });
+      };
+      data.policies.push(newPolicy);
       save(data);
 
       document.getElementById('policy-title').value = '';
       document.getElementById('policy-content').value = '';
       document.getElementById('policy-deadline').value = '';
+
+      lastPublished = {
+        policy: newPolicy,
+        items: assignments.map(a => {
+          const emp = data.employees.find(e => e.id === a.employeeId);
+          return {
+            name: emp ? emp.name : 'Staff',
+            phone: emp ? emp.phone : '',
+            token: a.token,
+            link: location.origin + location.pathname + '#confirm=' + a.token
+          };
+        })
+      };
+
       toast('Policy published!');
+      showSendSmsModal();
+    }
+
+    function showSendSmsModal() {
+      if (!lastPublished) return;
+      const list = document.getElementById('send-sms-list');
+      list.innerHTML = lastPublished.items.map(item => {
+        if (!item.phone) {
+          return `
+            <div class="border border-gray-200 rounded-2xl p-4">
+              <div class="font-medium text-sm">${escapeHtml(item.name)}</div>
+              <p class="text-xs text-red-500 mt-1">No phone number</p>
+            </div>
+          `;
+        }
+        const message = encodeURIComponent(
+          'Hi ' + item.name + ', please review and confirm this policy from LAM Nail Spa:\n\n' +
+          lastPublished.policy.title + '\n\n' +
+          'Open this link to read & sign:\n' + item.link
+        );
+        // Clean phone number (keep + and digits)
+        const cleanPhone = item.phone.replace(/[^\d+]/g, '');
+        const smsLink = 'sms:' + cleanPhone + '?body=' + message;
+        return `
+          <div class="border border-gray-200 rounded-2xl p-4">
+            <div class="flex justify-between items-center mb-2">
+              <div>
+                <div class="font-medium text-sm">${escapeHtml(item.name)}</div>
+                <div class="text-xs text-gray-500">${escapeHtml(item.phone)}</div>
+              </div>
+            </div>
+            <a href="${smsLink}" class="block w-full text-center bg-brand-purple text-white text-sm font-semibold py-2.5 rounded-xl">
+              Send SMS
+            </a>
+          </div>
+        `;
+      }).join('');
+      document.getElementById('modal-send-sms').classList.remove('hidden');
+    }
+
+    function closeSendSms() {
+      document.getElementById('modal-send-sms').classList.add('hidden');
       showPage('live');
     }
 
@@ -543,20 +603,18 @@
         const total = p.assignments.length;
         return `
           <div class="card p-5">
-            <div class="flex items-start justify-between gap-2">
-              <div class="flex-1 min-w-0" onclick="openDetail('${p.id}')">
-                <div class="flex items-center gap-2">
-                  <span class="text-lg">📋</span>
-                  <h3 class="font-bold text-gray-900">Current Policy</h3>
-                  <span class="text-[10px] font-bold bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">LIVE</span>
-                </div>
-                <h4 class="text-base font-semibold text-gray-900 mt-2">${escapeHtml(p.title)}</h4>
-                ${p.deadline ? `<p class="text-xs text-gray-500 mt-1">Deadline: ${p.deadline}</p>` : ''}
-                <p class="text-sm text-gray-600 mt-2 line-clamp-2">${escapeHtml(p.content.substring(0, 100))}${p.content.length > 100 ? '…' : ''}</p>
-                <div class="mt-3 text-sm">
-                  <span class="font-semibold ${confirmed === total ? 'text-green-600' : 'text-orange-500'}">${confirmed}/${total}</span>
-                  <span class="text-gray-500"> confirmed</span>
-                </div>
+            <div class="flex-1 min-w-0" onclick="openDetail('${p.id}')">
+              <div class="flex items-center gap-2">
+                <span class="text-lg">📋</span>
+                <h3 class="font-bold text-gray-900">Current Policy</h3>
+                <span class="text-[10px] font-bold bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">LIVE</span>
+              </div>
+              <h4 class="text-base font-semibold text-gray-900 mt-2">${escapeHtml(p.title)}</h4>
+              ${p.deadline ? `<p class="text-xs text-gray-500 mt-1">Deadline: ${p.deadline}</p>` : ''}
+              <p class="text-sm text-gray-600 mt-2 line-clamp-2">${escapeHtml(p.content.substring(0, 100))}${p.content.length > 100 ? '…' : ''}</p>
+              <div class="mt-3 text-sm">
+                <span class="font-semibold ${confirmed === total ? 'text-green-600' : 'text-orange-500'}">${confirmed}/${total}</span>
+                <span class="text-gray-500"> confirmed</span>
               </div>
             </div>
             <div class="flex gap-2 mt-4 pt-3 border-t border-gray-100">
@@ -581,6 +639,7 @@
       document.getElementById('detail-status').innerHTML = p.assignments.map(a => {
         const emp = data.employees.find(e => e.id === a.employeeId);
         const name = emp ? emp.name : 'Unknown';
+        const phone = emp ? emp.phone : '';
         if (a.status === 'confirmed') {
           return `
             <div class="border border-green-200 bg-green-50 rounded-2xl p-3">
@@ -594,6 +653,9 @@
           `;
         }
         const link = location.origin + location.pathname + '#confirm=' + a.token;
+        const message = encodeURIComponent('Hi ' + name + ', please confirm this policy from LAM Nail Spa:\n\n' + p.title + '\n\nOpen link to sign:\n' + link);
+        const cleanPhone = (phone || '').replace(/[^\d+]/g, '');
+        const smsLink = cleanPhone ? 'sms:' + cleanPhone + '?body=' + message : '';
         return `
           <div class="border border-gray-200 rounded-2xl p-3">
             <div class="flex justify-between items-center mb-2">
@@ -602,8 +664,9 @@
             </div>
             <div class="flex gap-2">
               <input type="text" readonly value="${link}" class="flex-1 text-[11px] bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-2" id="lnk-${a.token}" />
-              <button onclick="event.stopPropagation(); copyLink('${a.token}')" class="bg-brand-purple text-white text-xs font-semibold px-3 py-2 rounded-xl">Copy</button>
+              <button onclick="event.stopPropagation(); copyLink('${a.token}')" class="bg-gray-800 text-white text-xs font-semibold px-3 py-2 rounded-xl">Copy</button>
             </div>
+            ${smsLink ? `<a href="${smsLink}" class="mt-2 block w-full text-center bg-brand-purple text-white text-xs font-semibold py-2 rounded-xl">Send SMS</a>` : ''}
           </div>
         `;
       }).join('');
@@ -620,9 +683,7 @@
       navigator.clipboard.writeText(el.value).then(() => toast('Link copied!')).catch(() => { el.select(); toast('Press Ctrl+C'); });
     }
 
-    function startEditFromList(id) {
-      startEditPolicy(id);
-    }
+    function startEditFromList(id) { startEditPolicy(id); }
 
     function startEditPolicy(id) {
       const policyId = id || detailPolicyId;
@@ -941,6 +1002,9 @@
     });
     document.getElementById('modal-emp-policy').addEventListener('click', e => {
       if (e.target.id === 'modal-emp-policy') closeEmpPolicy();
+    });
+    document.getElementById('modal-send-sms').addEventListener('click', e => {
+      if (e.target.id === 'modal-send-sms') closeSendSms();
     });
 
     init();
