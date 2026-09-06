@@ -126,8 +126,18 @@
         <div class="text-sm text-gray-800 whitespace-pre-wrap" id="task-view-desc"></div>
         <img id="task-view-photo" class="hidden w-full rounded-2xl border" />
         <div id="task-view-actions" class="space-y-3 pt-2">
-          <button onclick="respondTask('accepted')" class="w-full bg-green-600 text-white font-semibold py-3.5 rounded-2xl">Accept</button>
+          <button onclick="showTaskComplete()" class="w-full bg-green-600 text-white font-semibold py-3.5 rounded-2xl">Complete</button>
           <button onclick="showTaskDeny()" class="w-full border border-red-300 text-red-600 font-semibold py-3.5 rounded-2xl">Deny</button>
+        </div>
+        <div id="task-complete-box" class="hidden space-y-3">
+          <textarea id="task-complete-comment" rows="3" placeholder="Comment (optional)" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm"></textarea>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Photo of completed work (optional)</label>
+            <input id="task-complete-photo" type="file" accept="image/*" class="w-full text-sm" />
+            <img id="task-complete-photo-preview" class="hidden mt-2 max-h-40 rounded-xl border" />
+          </div>
+          <button onclick="respondTask('completed')" class="w-full bg-green-600 text-white font-semibold py-3 rounded-2xl">Submit Complete</button>
+          <button onclick="hideTaskComplete()" class="w-full text-sm text-gray-500">Cancel</button>
         </div>
         <div id="task-deny-box" class="hidden space-y-3">
           <textarea id="task-deny-reason" rows="3" placeholder="Reason for denying (required)" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm"></textarea>
@@ -696,14 +706,15 @@
       const errEl = document.getElementById('login-error');
       errEl.classList.add('hidden');
       errEl.textContent = 'Wrong email or password';
-      if (!email || !password) {
-        errEl.textContent = 'Enter email and password';
+      if (!password) {
+        errEl.textContent = 'Enter password';
         errEl.classList.remove('hidden');
         return;
       }
       await refreshCache();
-      const admins = cache.employees.filter(e => e.role === 'admin');
-      // First-time: no admin yet → allow env/default password then require creating admin in Staff
+      const admins = cache.employees.filter(e => e.role === 'admin' && e.password_hash);
+
+      // BOOTSTRAP: no admin account set up yet → password only (Vercel ADMIN_PASSWORD or default)
       if (!admins.length) {
         let ok = false;
         try {
@@ -714,21 +725,33 @@
           });
           ok = res.ok;
         } catch (e) {
-          ok = (password === 'LAM2024!');
+          ok = false;
         }
-        if (!ok) { errEl.classList.remove('hidden'); return; }
+        if (!ok && password === 'LAM2024!') ok = true;
+        if (!ok) {
+          errEl.textContent = 'Wrong password. Use the bootstrap password until you create an Admin in Staff.';
+          errEl.classList.remove('hidden');
+          return;
+        }
         sessionStorage.setItem('lam_admin_token', 'ok');
         sessionStorage.removeItem('lam_admin_id');
         currentAdminId = null;
         document.getElementById('login-view').classList.add('hidden');
         document.getElementById('admin-view').classList.remove('hidden');
         showPage('staff');
-        toast('Create yourself as Admin in Staff tab (role = Admin + password)');
+        toast('Create yourself as Admin: Staff → Role=Admin + password');
         startLiveRefresh();
         return;
       }
+
+      // Normal admin login with email + password
+      if (!email) {
+        errEl.textContent = 'Enter your admin email';
+        errEl.classList.remove('hidden');
+        return;
+      }
       const admin = admins.find(e => (e.email || '').toLowerCase() === email);
-      if (!admin || !admin.password_hash) {
+      if (!admin) {
         errEl.classList.remove('hidden');
         return;
       }
@@ -885,21 +908,103 @@
       empty.classList.add('hidden');
       list.innerHTML = cache.tasks.map(task => {
         const emp = cache.employees.find(e => e.id === task.assignee_id);
-        const statusColor = task.status === 'accepted' ? 'text-green-600 bg-green-50' : task.status === 'denied' ? 'text-red-600 bg-red-50' : 'text-orange-600 bg-orange-50';
+        const statusColor = task.status === 'completed' ? 'text-green-600 bg-green-50' : task.status === 'denied' ? 'text-red-600 bg-red-50' : 'text-orange-600 bg-orange-50';
         return `<div class="card p-4">
           <div class="flex justify-between items-start gap-2">
             <div>
               <h3 class="font-semibold text-gray-900">${escapeHtml(task.title)}</h3>
               <p class="text-xs text-gray-500 mt-0.5">${escapeHtml(emp ? emp.name : 'Staff')}${task.deadline ? ' · Due ' + task.deadline : ''}</p>
             </div>
-            <span class="text-xs font-semibold px-2 py-1 rounded-full ${statusColor}">${task.status}</span>
+            <span class="text-xs font-semibold px-2 py-1 rounded-full ${statusColor}">${escapeHtml(task.status)}</span>
           </div>
           ${task.description ? `<p class="text-sm text-gray-600 mt-2 line-clamp-2">${escapeHtml(task.description)}</p>` : ''}
           ${task.photo ? `<img src="${task.photo}" class="mt-2 max-h-28 rounded-xl border" />` : ''}
-          ${task.status === 'denied' && task.deny_reason ? `<p class="text-xs text-red-600 mt-2">Reason: ${escapeHtml(task.deny_reason)}</p>` : ''}
-          <button onclick="deleteTask('${task.id}')" class="text-xs text-red-500 font-medium mt-2">Delete</button>
+          ${task.status === 'denied' && task.deny_reason ? `<p class="text-xs text-red-600 mt-2">Deny reason: ${escapeHtml(task.deny_reason)}</p>` : ''}
+          ${task.status === 'completed' && task.complete_comment ? `<p class="text-xs text-green-700 mt-2">Comment: ${escapeHtml(task.complete_comment)}</p>` : ''}
+          ${task.status === 'completed' && task.complete_photo ? `<img src="${task.complete_photo}" class="mt-2 max-h-28 rounded-xl border" />` : ''}
+          <div class="flex flex-wrap gap-2 mt-3">
+            <button onclick="openEditTask('${task.id}')" class="text-xs font-medium text-brand-purple bg-purple-50 px-2.5 py-1.5 rounded-lg">Edit</button>
+            <button onclick="openTransferTask('${task.id}')" class="text-xs font-medium text-gray-700 bg-gray-100 px-2.5 py-1.5 rounded-lg">Transfer</button>
+            <button onclick="deleteTask('${task.id}')" class="text-xs font-medium text-red-600 bg-red-50 px-2.5 py-1.5 rounded-lg">Delete</button>
+          </div>
         </div>`;
       }).join('');
+    }
+
+    function openEditTask(id) {
+      const task = cache.tasks.find(x => x.id === id);
+      if (!task) return;
+      document.getElementById('edit-task-id').value = task.id;
+      document.getElementById('edit-task-title').value = task.title || '';
+      document.getElementById('edit-task-desc').value = task.description || '';
+      document.getElementById('edit-task-deadline').value = task.deadline || '';
+      document.getElementById('modal-edit-task').classList.remove('hidden');
+    }
+    function closeEditTask() { document.getElementById('modal-edit-task').classList.add('hidden'); }
+
+    async function saveEditTask() {
+      const id = document.getElementById('edit-task-id').value;
+      const title = document.getElementById('edit-task-title').value.trim();
+      const description = document.getElementById('edit-task-desc').value.trim();
+      const deadline = document.getElementById('edit-task-deadline').value || null;
+      if (!title) { toast('Title required'); return; }
+      const { error } = await supabase.from('tasks').update({ title, description, deadline }).eq('id', id);
+      if (error) { toast(error.message); return; }
+      await refreshCache();
+      closeEditTask();
+      renderTasks();
+      toast('Task updated');
+    }
+
+    function openTransferTask(id) {
+      const task = cache.tasks.find(x => x.id === id);
+      if (!task) return;
+      document.getElementById('transfer-task-id').value = task.id;
+      const sel = document.getElementById('transfer-task-assignee');
+      const staff = cache.employees.filter(e => e.role !== 'admin');
+      sel.innerHTML = staff.map(e => `<option value="${e.id}" ${e.id===task.assignee_id?'selected':''}>${escapeHtml(e.name)}</option>`).join('');
+      document.getElementById('modal-transfer-task').classList.remove('hidden');
+    }
+    function closeTransferTask() { document.getElementById('modal-transfer-task').classList.add('hidden'); }
+
+    async function saveTransferTask() {
+      const id = document.getElementById('transfer-task-id').value;
+      const assigneeId = document.getElementById('transfer-task-assignee').value;
+      const task = cache.tasks.find(x => x.id === id);
+      if (!task || !assigneeId) return;
+      const newToken = uid() + uid();
+      const { error } = await supabase.from('tasks').update({
+        assignee_id: assigneeId,
+        token: newToken,
+        status: 'pending',
+        deny_reason: null,
+        complete_comment: null,
+        complete_photo: null
+      }).eq('id', id);
+      if (error) { toast(error.message); return; }
+      const emp = cache.employees.find(e => e.id === assigneeId);
+      const link = location.origin + location.pathname + '#task=' + newToken;
+      if (emp && emp.email) {
+        try {
+          document.getElementById('sending-overlay').classList.remove('hidden');
+          await fetch('/api/send-emails', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ emails: [{ to: emp.email, name: emp.name, policyTitle: 'Task: ' + task.title, link }] })
+          });
+          document.getElementById('sending-overlay').classList.add('hidden');
+        } catch (e) {
+          document.getElementById('sending-overlay').classList.add('hidden');
+        }
+      }
+      if (emp && emp.phone && confirm('Also open SMS to notify ' + emp.name + '?')) {
+        const smsBody = encodeURIComponent('Hi ' + emp.name + ', task from LAM NAIL SPA: ' + task.title + '\n' + link);
+        location.href = 'sms:' + emp.phone.replace(/[^\d+]/g,'') + '?body=' + smsBody;
+      }
+      await refreshCache();
+      closeTransferTask();
+      renderTasks();
+      toast('Task transferred');
     }
 
     async function deleteTask(id) {
@@ -932,35 +1037,86 @@
         document.getElementById('task-view-actions').classList.add('hidden');
         document.getElementById('task-deny-box').classList.add('hidden');
         document.getElementById('task-view-done').classList.remove('hidden');
-        document.getElementById('task-view-status').textContent = 'Status: ' + task.status + (task.deny_reason ? ' — ' + task.deny_reason : '');
+        let st = 'Status: ' + task.status;
+        if (task.deny_reason) st += ' — ' + task.deny_reason;
+        if (task.complete_comment) st += ' — ' + task.complete_comment;
+        document.getElementById('task-view-status').textContent = st;
       }
     }
 
     function showTaskDeny() {
       document.getElementById('task-view-actions').classList.add('hidden');
+      document.getElementById('task-complete-box')?.classList.add('hidden');
       document.getElementById('task-deny-box').classList.remove('hidden');
     }
     function hideTaskDeny() {
       document.getElementById('task-deny-box').classList.add('hidden');
       document.getElementById('task-view-actions').classList.remove('hidden');
     }
+    function showTaskComplete() {
+      document.getElementById('task-view-actions').classList.add('hidden');
+      document.getElementById('task-deny-box')?.classList.add('hidden');
+      document.getElementById('task-complete-box').classList.remove('hidden');
+      const input = document.getElementById('task-complete-photo');
+      if (input && !input._bound) {
+        input._bound = true;
+        input.addEventListener('change', function(e) {
+          const file = e.target.files && e.target.files[0];
+          const prev = document.getElementById('task-complete-photo-preview');
+          if (!file) { prev.classList.add('hidden'); window._completePhotoData = null; return; }
+          const reader = new FileReader();
+          reader.onload = function() {
+            const img = new Image();
+            img.onload = function() {
+              const canvas = document.createElement('canvas');
+              let w = img.width, h = img.height, max = 1200;
+              if (w > max || h > max) {
+                if (w > h) { h = Math.round(h * max / w); w = max; }
+                else { w = Math.round(w * max / h); h = max; }
+              }
+              canvas.width = w; canvas.height = h;
+              canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+              window._completePhotoData = canvas.toDataURL('image/jpeg', 0.72);
+              prev.src = window._completePhotoData;
+              prev.classList.remove('hidden');
+            };
+            img.src = reader.result;
+          };
+          reader.readAsDataURL(file);
+        });
+      }
+    }
+    function hideTaskComplete() {
+      document.getElementById('task-complete-box').classList.add('hidden');
+      document.getElementById('task-view-actions').classList.remove('hidden');
+    }
 
     async function respondTask(status) {
       const task = cache.tasks.find(x => x.token === currentTaskToken);
       if (!task || task.status !== 'pending') return;
-      let deny_reason = null;
+      const updates = { status };
       if (status === 'denied') {
-        deny_reason = document.getElementById('task-deny-reason').value.trim();
+        const deny_reason = document.getElementById('task-deny-reason').value.trim();
         if (!deny_reason) { toast('Please enter a reason'); return; }
+        updates.deny_reason = deny_reason;
       }
-      const { error } = await supabase.from('tasks').update({ status, deny_reason }).eq('id', task.id);
+      if (status === 'completed') {
+        updates.complete_comment = document.getElementById('task-complete-comment')?.value.trim() || null;
+        updates.complete_photo = window._completePhotoData || null;
+        updates.deny_reason = null;
+      }
+      const { error } = await supabase.from('tasks').update(updates).eq('id', task.id);
       if (error) { toast(error.message); return; }
       await refreshCache();
       document.getElementById('task-view-actions').classList.add('hidden');
-      document.getElementById('task-deny-box').classList.add('hidden');
+      document.getElementById('task-deny-box')?.classList.add('hidden');
+      document.getElementById('task-complete-box')?.classList.add('hidden');
       document.getElementById('task-view-done').classList.remove('hidden');
-      document.getElementById('task-view-status').textContent = 'Status: ' + status + (deny_reason ? ' — ' + deny_reason : '');
-      toast(status === 'accepted' ? 'Task accepted' : 'Task denied');
+      let msg = 'Status: ' + status;
+      if (status === 'denied' && updates.deny_reason) msg += ' — ' + updates.deny_reason;
+      if (status === 'completed' && updates.complete_comment) msg += ' — ' + updates.complete_comment;
+      document.getElementById('task-view-status').textContent = msg;
+      toast(status === 'completed' ? 'Task completed' : 'Task denied');
     }
 
 
