@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>LAM Nail Spa – Staff Policy & Training Hub</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -278,7 +278,14 @@
   <script>
     const SUPABASE_URL = 'https://fvqguvzxgytsgcgqhcxx.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2cWd1dnp4Z3l0c2djZ3FoY3h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0MDMxNjYsImV4cCI6MjEwMzk3OTE2Nn0.U7SRJI6KP8sE3fqGL99t0mGekkBL0Q7UdjF-7bdc2U8';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Support both UMD global shapes
+    const sbLib = window.supabase || window.supabaseJs;
+    if (!sbLib || !sbLib.createClient) {
+      document.getElementById('loading').innerHTML = '<div class="text-center px-6"><p class="text-red-600 font-semibold">Failed to load Supabase library.</p><p class="text-sm text-gray-500 mt-2">Please refresh the page.</p></div>';
+      throw new Error('Supabase library not found');
+    }
+    const supabase = sbLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let currentEmployeeId = null;
     let currentToken = null;
@@ -308,6 +315,9 @@
         supabase.from('policies').select('*').order('created_at', { ascending: false }),
         supabase.from('assignments').select('*')
       ]);
+      if (empRes.error) throw new Error('employees: ' + empRes.error.message);
+      if (polRes.error) throw new Error('policies: ' + polRes.error.message);
+      if (assRes.error) throw new Error('assignments: ' + assRes.error.message);
       cache.employees = empRes.data || [];
       cache.policies = polRes.data || [];
       cache.assignments = assRes.data || [];
@@ -320,13 +330,28 @@
     }
 
     async function init() {
-      try { await refreshCache(); } catch (e) { console.error(e); toast('Connection error'); }
-      document.getElementById('loading').classList.add('hidden');
-      const token = getToken();
-      if (token) await handleEmployeeLink(token);
-      else {
-        document.getElementById('admin-view').classList.remove('hidden');
-        showPage('dashboard');
+      const loadingEl = document.getElementById('loading');
+      try {
+        // 12 second timeout so it never spins forever
+        await Promise.race([
+          refreshCache(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout connecting to database')), 12000))
+        ]);
+        loadingEl.classList.add('hidden');
+        const token = getToken();
+        if (token) await handleEmployeeLink(token);
+        else {
+          document.getElementById('admin-view').classList.remove('hidden');
+          showPage('dashboard');
+        }
+      } catch (e) {
+        console.error(e);
+        loadingEl.innerHTML = '<div class="text-center px-6 max-w-sm">' +
+          '<p class="text-red-600 font-semibold text-lg">Could not load data</p>' +
+          '<p class="text-sm text-gray-600 mt-2">' + escapeHtml(e.message || 'Unknown error') + '</p>' +
+          '<button onclick="location.reload()" class="mt-5 bg-black text-white px-5 py-2.5 rounded-xl text-sm font-medium">Try Again</button>' +
+          '<p class="text-xs text-gray-400 mt-4">Check that your Supabase tables exist and RLS policies allow public access.</p>' +
+          '</div>';
       }
     }
 
