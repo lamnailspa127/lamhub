@@ -42,8 +42,23 @@
     .fade { animation: fadeIn 0.25s ease; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
     .card { background: white; border-radius: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-    input, textarea { outline: none; }
-    input:focus, textarea:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.15); }
+    input, textarea, select { outline: none; }
+    input:focus, textarea:focus, select:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.15); }
+    input[type="date"] {
+      min-height: 48px;
+      line-height: 1.25;
+      -webkit-appearance: none;
+      appearance: none;
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding-left: 1rem;
+      padding-right: 1rem;
+      color: #111;
+      background: #fff;
+    }
+    input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+    input[type="date"]::-webkit-calendar-picker-indicator { opacity: 0.6; }
   </style>
 </head>
 <body class="min-h-screen pb-6">
@@ -357,7 +372,10 @@
           <div class="space-y-3">
             <input id="task-title" type="text" placeholder="Task title (e.g. Clean table 3)" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
             <textarea id="task-desc" rows="3" placeholder="Details / instructions" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm resize-none"></textarea>
-            <input id="task-deadline" type="date" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-600" />
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Deadline (optional)</label>
+              <input id="task-deadline" type="date" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm bg-white" />
+            </div>
             <div>
               <label class="block text-xs font-medium text-gray-500 mb-1">Photo (optional)</label>
               <input id="task-photo" type="file" accept="image/*" class="w-full text-sm" />
@@ -533,7 +551,7 @@
 
   
   <div id="modal-edit-task" class="hidden fixed inset-0 z-[70] bg-black/40 flex items-end sm:items-center justify-center px-3">
-    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-xl">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-xl max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
         <h3 class="font-bold text-lg">Edit Task</h3>
         <button type="button" onclick="closeEditTask()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xl text-gray-500">&times;</button>
@@ -542,7 +560,19 @@
       <div class="space-y-3">
         <input id="edit-task-title" type="text" placeholder="Title" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
         <textarea id="edit-task-desc" rows="3" placeholder="Details" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm"></textarea>
-        <input id="edit-task-deadline" type="date" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Deadline (optional)</label>
+          <input id="edit-task-deadline" type="date" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm bg-white" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Photo</label>
+          <div id="edit-task-photo-current" class="hidden mb-2">
+            <img id="edit-task-photo-img" class="max-h-32 rounded-xl border" />
+            <button type="button" onclick="removeEditTaskPhoto()" class="text-xs text-red-500 font-medium mt-1">Remove photo</button>
+          </div>
+          <input id="edit-task-photo-file" type="file" accept="image/*" class="w-full text-sm" />
+          <img id="edit-task-photo-preview" class="hidden mt-2 max-h-32 rounded-xl border" />
+        </div>
         <button type="button" onclick="saveEditTask()" class="w-full bg-brand-purple text-white font-semibold py-3 rounded-2xl">Save</button>
       </div>
     </div>
@@ -560,6 +590,16 @@
         <button type="button" onclick="saveTransferTask('email')" class="flex-1 bg-brand-purple text-white font-semibold py-3 rounded-2xl text-sm">Transfer + Email</button>
         <button type="button" onclick="saveTransferTask('sms')" class="flex-1 bg-green-600 text-white font-semibold py-3 rounded-2xl text-sm">Transfer + SMS</button>
       </div>
+    </div>
+  </div>
+
+    <div id="modal-photo-view" class="hidden fixed inset-0 z-[80] bg-black/90 flex flex-col items-center justify-center px-3" onclick="if(event.target===this)closePhotoView()">
+    <button type="button" onclick="closePhotoView()" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 text-white text-2xl">&times;</button>
+    <p class="text-white text-sm font-medium mb-2" id="photo-view-label"></p>
+    <img id="photo-view-img" class="max-w-full max-h-[75vh] rounded-xl object-contain" />
+    <div id="photo-view-nav" class="flex gap-3 mt-4 hidden">
+      <button type="button" onclick="showPhotoViewIndex(0)" class="text-xs bg-white/20 text-white px-3 py-2 rounded-lg">Before</button>
+      <button type="button" onclick="showPhotoViewIndex(1)" class="text-xs bg-white/20 text-white px-3 py-2 rounded-lg">After</button>
     </div>
   </div>
 
@@ -977,10 +1017,12 @@
             <span class="text-xs font-semibold px-2 py-1 rounded-full ${statusColor}">${escapeHtml(task.status)}</span>
           </div>
           ${task.description ? `<p class="text-sm text-gray-600 mt-2 line-clamp-2">${escapeHtml(task.description)}</p>` : ''}
-          ${task.photo ? `<img src="${task.photo}" class="mt-2 max-h-28 rounded-xl border" />` : ''}
+          ${(task.photo || task.complete_photo) ? `<div class="flex gap-2 mt-2 flex-wrap">
+            ${task.photo ? `<button type="button" onclick="viewTaskPhotos('${task.id}','before')" class="relative p-0 border-0 bg-transparent"><img src="${task.photo}" class="max-h-28 rounded-xl border" /><span class="absolute bottom-1 left-1 text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded">Before</span></button>` : ''}
+            ${task.complete_photo ? `<button type="button" onclick="viewTaskPhotos('${task.id}','after')" class="relative p-0 border-0 bg-transparent"><img src="${task.complete_photo}" class="max-h-28 rounded-xl border" /><span class="absolute bottom-1 left-1 text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded">After</span></button>` : ''}
+          </div>` : ''}
           ${task.status === 'denied' && task.deny_reason ? `<p class="text-xs text-red-600 mt-2">Deny reason: ${escapeHtml(task.deny_reason)}</p>` : ''}
           ${task.status === 'completed' && task.complete_comment ? `<p class="text-xs text-green-700 mt-2">Comment: ${escapeHtml(task.complete_comment)}</p>` : ''}
-          ${task.status === 'completed' && task.complete_photo ? `<img src="${task.complete_photo}" class="mt-2 max-h-28 rounded-xl border" />` : ''}
           <div class="flex flex-wrap gap-2 mt-3">
             <button onclick="openEditTask('${task.id}')" class="text-xs font-medium text-brand-purple bg-purple-50 px-2.5 py-1.5 rounded-lg">Edit</button>
             <button onclick="openTransferTask('${task.id}')" class="text-xs font-medium text-gray-700 bg-gray-100 px-2.5 py-1.5 rounded-lg">Transfer</button>
@@ -999,9 +1041,60 @@
       document.getElementById('edit-task-title').value = task.title || '';
       document.getElementById('edit-task-desc').value = task.description || '';
       document.getElementById('edit-task-deadline').value = task.deadline || '';
+      window._editTaskPhoto = task.photo || null;
+      window._editTaskPhotoRemoved = false;
+      const cur = document.getElementById('edit-task-photo-current');
+      const img = document.getElementById('edit-task-photo-img');
+      const prev = document.getElementById('edit-task-photo-preview');
+      const file = document.getElementById('edit-task-photo-file');
+      if (file) file.value = '';
+      if (prev) { prev.classList.add('hidden'); prev.src = ''; }
+      if (task.photo) {
+        img.src = task.photo;
+        cur.classList.remove('hidden');
+      } else {
+        cur.classList.add('hidden');
+        img.src = '';
+      }
+      if (file && !file._bound) {
+        file._bound = true;
+        file.addEventListener('change', function(e) {
+          const f = e.target.files && e.target.files[0];
+          if (!f) return;
+          const reader = new FileReader();
+          reader.onload = function() {
+            const im = new Image();
+            im.onload = function() {
+              const canvas = document.createElement('canvas');
+              let w = im.width, h = im.height, max = 1200;
+              if (w > max || h > max) {
+                if (w > h) { h = Math.round(h * max / w); w = max; }
+                else { w = Math.round(w * max / h); h = max; }
+              }
+              canvas.width = w; canvas.height = h;
+              canvas.getContext('2d').drawImage(im, 0, 0, w, h);
+              window._editTaskPhoto = canvas.toDataURL('image/jpeg', 0.72);
+              window._editTaskPhotoRemoved = false;
+              prev.src = window._editTaskPhoto;
+              prev.classList.remove('hidden');
+              cur.classList.add('hidden');
+            };
+            im.src = reader.result;
+          };
+          reader.readAsDataURL(f);
+        });
+      }
       modal.classList.remove('hidden');
     }
     function closeEditTask() { document.getElementById('modal-edit-task').classList.add('hidden'); }
+    function removeEditTaskPhoto() {
+      window._editTaskPhoto = null;
+      window._editTaskPhotoRemoved = true;
+      document.getElementById('edit-task-photo-current').classList.add('hidden');
+      document.getElementById('edit-task-photo-img').src = '';
+      document.getElementById('edit-task-photo-preview').classList.add('hidden');
+      document.getElementById('edit-task-photo-file').value = '';
+    }
 
     async function saveEditTask() {
       const id = document.getElementById('edit-task-id').value;
@@ -1009,12 +1102,51 @@
       const description = document.getElementById('edit-task-desc').value.trim();
       const deadline = document.getElementById('edit-task-deadline').value || null;
       if (!title) { toast('Title required'); return; }
-      const { error } = await supabase.from('tasks').update({ title, description, deadline }).eq('id', id);
+      const updates = { title, description, deadline };
+      if (window._editTaskPhotoRemoved) updates.photo = null;
+      else if (window._editTaskPhoto) updates.photo = window._editTaskPhoto;
+      const { error } = await supabase.from('tasks').update(updates).eq('id', id);
       if (error) { toast(error.message); return; }
       await refreshCache();
       closeEditTask();
       renderTasks();
       toast('Task updated');
+    }
+
+    let _photoViewList = [];
+    function openPhotoView(src, label, list) {
+      if (!src) return;
+      _photoViewList = list || [{ src: src, label: label || 'Photo' }];
+      const idx = Math.max(0, _photoViewList.findIndex(p => p.src === src));
+      showPhotoViewIndex(idx >= 0 ? idx : 0);
+      document.getElementById('modal-photo-view').classList.remove('hidden');
+      const nav = document.getElementById('photo-view-nav');
+      if (_photoViewList.length > 1) nav.classList.remove('hidden');
+      else nav.classList.add('hidden');
+    }
+    function showPhotoViewIndex(i) {
+      if (!_photoViewList.length) return;
+      const item = _photoViewList[i] || _photoViewList[0];
+      document.getElementById('photo-view-img').src = item.src;
+      document.getElementById('photo-view-label').textContent = item.label || '';
+    }
+    function closePhotoView() {
+      document.getElementById('modal-photo-view').classList.add('hidden');
+      document.getElementById('photo-view-img').src = '';
+    }
+    function viewTaskPhotos(taskId, which) {
+      const task = cache.tasks.find(x => x.id === taskId);
+      if (!task) return;
+      const list = [];
+      if (task.photo) list.push({ src: task.photo, label: 'Before' });
+      if (task.complete_photo) list.push({ src: task.complete_photo, label: 'After' });
+      if (!list.length) return;
+      let idx = 0;
+      if (which === 'after' && task.complete_photo) {
+        idx = list.findIndex(p => p.label === 'After');
+        if (idx < 0) idx = 0;
+      }
+      openPhotoView(list[idx].src, list[idx].label, list);
     }
 
     function openTransferTask(id) {
