@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>LAM Nail Spa – Staff Policy & Training Hub</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -24,19 +25,11 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
     * { -webkit-tap-highlight-color: transparent; }
     body { font-family: 'Inter', system-ui, sans-serif; background: #f3f4f6; }
-    .signature-pad {
-      border: 2px dashed #d1d5db;
-      border-radius: 16px;
-      touch-action: none;
-      background: #fff;
-    }
+    .signature-pad { border: 2px dashed #d1d5db; border-radius: 16px; touch-action: none; background: #fff; }
     .signature-pad.signed { border-color: #7c3aed; border-style: solid; }
     .tab-active { color: #7c3aed; background: #f5f3ff; }
     .fade { animation: fadeIn 0.25s ease; }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
     .card { background: white; border-radius: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
     input, textarea { outline: none; }
     input:focus, textarea:focus { border-color: #7c3aed; box-shadow: 0 0 0 3px rgba(124,58,237,0.15); }
@@ -44,7 +37,14 @@
 </head>
 <body class="min-h-screen pb-6">
 
-  <!-- ========== EMPLOYEE VIEW ========== -->
+  <div id="loading" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+    <div class="text-center">
+      <div class="w-10 h-10 border-4 border-brand-purple border-t-transparent rounded-full animate-spin mx-auto"></div>
+      <p class="text-sm text-gray-500 mt-3">Loading...</p>
+    </div>
+  </div>
+
+  <!-- EMPLOYEE VIEW -->
   <div id="employee-view" class="hidden min-h-screen bg-gray-100">
     <div class="bg-black pt-6 pb-5 px-5 text-center">
       <img src="logo.jpg" alt="LAM Nail Spa" class="h-16 mx-auto object-contain rounded-xl bg-white p-1.5" />
@@ -65,7 +65,7 @@
     </div>
   </div>
 
-  <!-- ========== SINGLE POLICY CONFIRMATION ========== -->
+  <!-- CONFIRM VIEW -->
   <div id="confirm-view" class="hidden min-h-screen bg-gray-100">
     <div class="bg-black pt-8 pb-6 px-5 text-center">
       <img src="logo.jpg" alt="LAM Nail Spa" class="h-20 mx-auto object-contain rounded-2xl bg-white p-2" />
@@ -88,21 +88,18 @@
             <button onclick="clearSignature()" class="text-xs text-gray-500 underline mt-1.5">Clear signature</button>
           </div>
           <label class="flex items-start gap-3 cursor-pointer">
-            <input type="checkbox" id="confirm-check" class="mt-1 w-5 h-5 rounded border-gray-300 text-brand-purple focus:ring-brand-purple" />
+            <input type="checkbox" id="confirm-check" class="mt-1 w-5 h-5 rounded border-gray-300 text-brand-purple" />
             <span class="text-sm text-gray-700 leading-snug">I confirm I am the assigned employee, I have carefully read the policy above, and I understand my responsibilities.</span>
           </label>
-          <button onclick="submitConfirmation()" class="w-full bg-brand-purple hover:bg-brand-purpleDark text-white font-semibold py-3.5 rounded-2xl text-base transition">
-            Confirm & Sign
-          </button>
+          <button onclick="submitConfirmation()" class="w-full bg-brand-purple hover:bg-brand-purpleDark text-white font-semibold py-3.5 rounded-2xl">Confirm & Sign</button>
         </div>
       </div>
       <p class="text-center text-xs text-gray-400 mt-6 mb-8">LAM Nail Spa • Staff Policy & Training Hub</p>
     </div>
   </div>
 
-  <!-- ========== ADMIN VIEW ========== -->
+  <!-- ADMIN VIEW -->
   <div id="admin-view" class="hidden">
-    <!-- Header -->
     <div class="bg-black text-white pt-6 pb-5 px-5 relative overflow-hidden">
       <div class="absolute inset-0 bg-gradient-to-b from-black to-gray-900"></div>
       <div class="relative z-10">
@@ -114,7 +111,7 @@
       </div>
     </div>
 
-    <!-- TOP TABS (moved from bottom) -->
+    <!-- TOP TABS -->
     <div class="px-4 -mt-3 relative z-20">
       <div class="card p-1.5 grid grid-cols-4 gap-1">
         <button onclick="showPage('dashboard')" data-tab="dashboard" class="tab-btn flex flex-col items-center justify-center py-2.5 rounded-xl text-gray-500">
@@ -136,7 +133,6 @@
       </div>
     </div>
 
-    <!-- Pages -->
     <div class="px-4 mt-4">
       <!-- DASHBOARD -->
       <div id="page-dashboard" class="page fade space-y-3">
@@ -161,19 +157,17 @@
       <!-- STAFF -->
       <div id="page-staff" class="page hidden fade">
         <div class="card p-5">
-          <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4">
-            <span class="text-xl">+</span> Add Employee
-          </h2>
+          <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4"><span class="text-xl">+</span> Add Employee</h2>
           <div class="space-y-3">
             <input id="emp-name" type="text" placeholder="Employee name" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
-            <input id="emp-phone" type="tel" placeholder="Phone number" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
-            <button onclick="addEmployee()" class="w-full bg-brand-green hover:bg-green-700 text-white font-semibold py-3 rounded-2xl transition">Add</button>
+            <input id="emp-email" type="email" placeholder="Email" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
+            <button onclick="addEmployee()" class="w-full bg-brand-green hover:bg-green-700 text-white font-semibold py-3 rounded-2xl">Add</button>
           </div>
         </div>
         <div class="card mt-4 overflow-hidden">
           <div class="grid grid-cols-12 gap-2 px-4 py-3 text-xs font-semibold text-gray-500 border-b border-gray-100">
             <div class="col-span-4">Name</div>
-            <div class="col-span-5">Phone</div>
+            <div class="col-span-5">Email</div>
             <div class="col-span-3 text-right">Status</div>
           </div>
           <div id="staff-list"></div>
@@ -184,9 +178,7 @@
       <!-- CREATE -->
       <div id="page-create" class="page hidden fade">
         <div class="card p-5">
-          <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4">
-            <span>📝</span> <span id="create-heading">Create Policy</span>
-          </h2>
+          <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2 mb-4"><span>📝</span> <span id="create-heading">Create Policy</span></h2>
           <div class="space-y-3">
             <input id="policy-title" type="text" placeholder="Policy Title" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
             <textarea id="policy-content" rows="5" placeholder="Instructions" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm resize-none"></textarea>
@@ -202,9 +194,7 @@
             </div>
             <div class="flex gap-2 mt-2">
               <button id="btn-cancel-edit" onclick="cancelEdit()" class="hidden flex-1 border border-gray-300 text-gray-700 font-semibold py-3.5 rounded-2xl">Cancel</button>
-              <button id="btn-publish" onclick="publishPolicy()" class="flex-1 bg-brand-purple hover:bg-brand-purpleDark text-white font-semibold py-3.5 rounded-2xl transition">
-                Publish Policy
-              </button>
+              <button id="btn-publish" onclick="publishPolicy()" class="flex-1 bg-brand-purple hover:bg-brand-purpleDark text-white font-semibold py-3.5 rounded-2xl">Publish Policy</button>
             </div>
           </div>
         </div>
@@ -213,14 +203,12 @@
       <!-- LIVE -->
       <div id="page-live" class="page hidden fade">
         <div id="live-list" class="space-y-4"></div>
-        <div id="live-empty" class="card py-14 text-center text-gray-400 text-sm hidden">
-          No published policies yet.<br>Create one in the Create tab.
-        </div>
+        <div id="live-empty" class="card py-14 text-center text-gray-400 text-sm hidden">No published policies yet.<br>Create one in the Create tab.</div>
       </div>
     </div>
   </div>
 
-  <!-- Policy Detail Modal -->
+  <!-- Detail Modal -->
   <div id="modal-detail" class="hidden fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center">
     <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto">
       <div class="sticky top-0 bg-white px-5 pt-5 pb-3 border-b border-gray-100 flex justify-between items-center">
@@ -242,24 +230,16 @@
     </div>
   </div>
 
-  <!-- Send SMS Modal (after publish) -->
-  <div id="modal-send-sms" class="hidden fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center">
-    <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[85vh] overflow-y-auto">
-      <div class="sticky top-0 bg-white px-5 pt-5 pb-3 border-b border-gray-100 flex justify-between items-center">
-        <div>
-          <h3 class="font-bold text-lg">Send SMS to Staff</h3>
-          <p class="text-xs text-gray-500 mt-0.5">Tap each button → your Messages app opens → press Send</p>
-        </div>
-        <button onclick="closeSendSms()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-xl">&times;</button>
-      </div>
-      <div class="p-5 space-y-3" id="send-sms-list"></div>
-      <div class="px-5 pb-6">
-        <button onclick="closeSendSms()" class="w-full bg-gray-100 text-gray-700 font-semibold py-3 rounded-2xl">Done</button>
-      </div>
+  <!-- Sending overlay -->
+  <div id="sending-overlay" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+    <div class="bg-white rounded-2xl p-6 text-center max-w-xs mx-4">
+      <div class="w-10 h-10 border-4 border-brand-purple border-t-transparent rounded-full animate-spin mx-auto"></div>
+      <p class="font-semibold mt-4" id="sending-text">Sending emails...</p>
+      <p class="text-xs text-gray-500 mt-1">Please wait</p>
     </div>
   </div>
 
-  <!-- Employee Policy Detail / Sign Modal -->
+  <!-- Emp Policy Modal -->
   <div id="modal-emp-policy" class="hidden fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center">
     <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto">
       <div class="sticky top-0 bg-white px-5 pt-5 pb-3 border-b border-gray-100 flex justify-between items-center">
@@ -296,22 +276,17 @@
   <div id="toast" class="hidden fixed top-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-5 py-2.5 rounded-full text-sm font-medium z-50 shadow-lg"></div>
 
   <script>
-    const STORAGE_KEY = 'lam_hub_v3';
+    const SUPABASE_URL = 'https://fvqguvzxgytsgcgqhcxx.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2cWd1dnp4Z3l0c2djZ3FoY3h4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0MDMxNjYsImV4cCI6MjEwMzk3OTE2Nn0.U7SRJI6KP8sE3fqGL99t0mGekkBL0Q7UdjF-7bdc2U8';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     let currentEmployeeId = null;
     let currentToken = null;
     let editingPolicyId = null;
     let detailPolicyId = null;
-    let lastPublished = null;
+    let cache = { employees: [], policies: [], assignments: [] };
 
-    function load() {
-      try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) return JSON.parse(raw);
-      } catch {}
-      return { employees: [], policies: [] };
-    }
-    function save(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
-    function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+    function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 9); }
     function fmt(iso) {
       if (!iso) return '—';
       return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -324,7 +299,18 @@
       const t = document.getElementById('toast');
       t.textContent = msg;
       t.classList.remove('hidden');
-      setTimeout(() => t.classList.add('hidden'), 2500);
+      setTimeout(() => t.classList.add('hidden'), 2800);
+    }
+
+    async function refreshCache() {
+      const [empRes, polRes, assRes] = await Promise.all([
+        supabase.from('employees').select('*').order('created_at', { ascending: true }),
+        supabase.from('policies').select('*').order('created_at', { ascending: false }),
+        supabase.from('assignments').select('*')
+      ]);
+      cache.employees = empRes.data || [];
+      cache.policies = polRes.data || [];
+      cache.assignments = assRes.data || [];
     }
 
     function getToken() {
@@ -333,11 +319,12 @@
       return new URLSearchParams(location.search).get('confirm');
     }
 
-    function init() {
+    async function init() {
+      try { await refreshCache(); } catch (e) { console.error(e); toast('Connection error'); }
+      document.getElementById('loading').classList.add('hidden');
       const token = getToken();
-      if (token) {
-        handleEmployeeLink(token);
-      } else {
+      if (token) await handleEmployeeLink(token);
+      else {
         document.getElementById('admin-view').classList.remove('hidden');
         showPage('dashboard');
       }
@@ -351,45 +338,31 @@
         b.classList.add('text-gray-500');
       });
       const active = document.querySelector('[data-tab="' + name + '"]');
-      if (active) {
-        active.classList.add('tab-active', 'text-brand-purple');
-        active.classList.remove('text-gray-500');
-      }
+      if (active) { active.classList.add('tab-active', 'text-brand-purple'); active.classList.remove('text-gray-500'); }
       if (name === 'dashboard') renderDashboard();
       if (name === 'staff') renderStaff();
-      if (name === 'create') {
-        if (!editingPolicyId) resetCreateForm();
-        renderAssignList();
-      }
+      if (name === 'create') { if (!editingPolicyId) resetCreateForm(); renderAssignList(); }
       if (name === 'live') renderLive();
     }
 
     function renderDashboard() {
-      const data = load();
       let confirmed = 0, pending = 0;
-      data.policies.forEach(p => p.assignments.forEach(a => {
-        if (a.status === 'confirmed') confirmed++; else pending++;
-      }));
-      document.getElementById('stat-employees').textContent = data.employees.length;
-      document.getElementById('stat-policies').textContent = data.policies.length;
+      cache.assignments.forEach(a => { if (a.status === 'confirmed') confirmed++; else pending++; });
+      document.getElementById('stat-employees').textContent = cache.employees.length;
+      document.getElementById('stat-policies').textContent = cache.policies.length;
       document.getElementById('stat-confirmed').textContent = confirmed;
       document.getElementById('stat-pending').textContent = pending;
     }
 
     function renderStaff() {
-      const data = load();
       const list = document.getElementById('staff-list');
       const empty = document.getElementById('staff-empty');
-      if (!data.employees.length) {
-        list.innerHTML = '';
-        empty.classList.remove('hidden');
-        return;
-      }
+      if (!cache.employees.length) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
       empty.classList.add('hidden');
-      list.innerHTML = data.employees.map(e => `
+      list.innerHTML = cache.employees.map(e => `
         <div class="grid grid-cols-12 gap-2 px-4 py-3.5 items-center border-b border-gray-50 text-sm">
           <div class="col-span-4 font-medium text-gray-900 truncate">${escapeHtml(e.name)}</div>
-          <div class="col-span-5 text-gray-500 text-xs truncate">${escapeHtml(e.phone || '—')}</div>
+          <div class="col-span-5 text-gray-500 text-xs truncate">${escapeHtml(e.email || '—')}</div>
           <div class="col-span-3 text-right">
             <span class="text-green-600 text-xs font-medium mr-1">Active</span>
             <button onclick="deleteEmployee('${e.id}')" class="text-red-500 text-xs font-medium">Delete</button>
@@ -398,48 +371,41 @@
       `).join('');
     }
 
-    function addEmployee() {
+    async function addEmployee() {
       const name = document.getElementById('emp-name').value.trim();
-      const phone = document.getElementById('emp-phone').value.trim();
+      const email = document.getElementById('emp-email').value.trim();
       if (!name) { toast('Please enter employee name'); return; }
-      if (!phone) { toast('Please enter phone number'); return; }
-      const data = load();
-      data.employees.push({ id: uid(), name, phone, createdAt: new Date().toISOString() });
-      save(data);
+      if (!email) { toast('Please enter email'); return; }
+      const { error } = await supabase.from('employees').insert({ id: uid(), name, email });
+      if (error) { toast('Error: ' + error.message); return; }
       document.getElementById('emp-name').value = '';
-      document.getElementById('emp-phone').value = '';
+      document.getElementById('emp-email').value = '';
+      await refreshCache();
       renderStaff();
       toast('Employee added');
     }
 
-    function deleteEmployee(id) {
+    async function deleteEmployee(id) {
       if (!confirm('Delete this employee?')) return;
-      const data = load();
-      data.employees = data.employees.filter(e => e.id !== id);
-      save(data);
+      const { error } = await supabase.from('employees').delete().eq('id', id);
+      if (error) { toast('Error: ' + error.message); return; }
+      await refreshCache();
       renderStaff();
       toast('Employee deleted');
     }
 
     function renderAssignList(selectedIds) {
-      const data = load();
       const list = document.getElementById('assign-list');
       const empty = document.getElementById('assign-empty');
-      if (!data.employees.length) {
-        list.innerHTML = '';
-        empty.classList.remove('hidden');
-        return;
-      }
+      if (!cache.employees.length) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
       empty.classList.add('hidden');
       const selected = selectedIds || [];
-      list.innerHTML = data.employees.map(e => {
+      list.innerHTML = cache.employees.map(e => {
         const isChecked = selected.length === 0 ? true : selected.includes(e.id);
-        return `
-          <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-2xl cursor-pointer hover:bg-gray-50">
-            <input type="checkbox" value="${e.id}" class="assign-check w-5 h-5 rounded text-brand-purple border-gray-300" ${isChecked ? 'checked' : ''} />
-            <span class="text-sm font-medium text-gray-800">${escapeHtml(e.name)}</span>
-          </label>
-        `;
+        return `<label class="flex items-center gap-3 p-3 border border-gray-200 rounded-2xl cursor-pointer hover:bg-gray-50">
+          <input type="checkbox" value="${e.id}" class="assign-check w-5 h-5 rounded text-brand-purple border-gray-300" ${isChecked ? 'checked' : ''} />
+          <span class="text-sm font-medium text-gray-800">${escapeHtml(e.name)}</span>
+        </label>`;
       }).join('');
     }
 
@@ -463,151 +429,99 @@
       showPage('live');
     }
 
-    function publishPolicy() {
+    async function publishPolicy() {
       const title = document.getElementById('policy-title').value.trim();
       const content = document.getElementById('policy-content').value.trim();
-      const deadline = document.getElementById('policy-deadline').value;
+      const deadline = document.getElementById('policy-deadline').value || null;
       if (!title) { toast('Please enter a title'); return; }
       if (!content) { toast('Please enter instructions'); return; }
       const selected = [...document.querySelectorAll('.assign-check:checked')].map(c => c.value);
-      // Allow saving without any employees assigned (draft)
-
-      const data = load();
 
       if (editingPolicyId) {
-        const p = data.policies.find(x => x.id === editingPolicyId);
-        if (!p) return;
-        p.title = title;
-        p.content = content;
-        p.deadline = deadline || null;
-
-        p.assignments = p.assignments.filter(a => {
-          if (selected.includes(a.employeeId)) return true;
-          return a.status === 'confirmed';
-        });
-        selected.forEach(empId => {
-          if (!p.assignments.find(a => a.employeeId === empId)) {
-            p.assignments.push({
-              employeeId: empId,
-              token: uid() + uid(),
-              status: 'pending',
-              confirmedAt: null,
-              signature: null,
-              userAgent: null
-            });
+        const { error } = await supabase.from('policies').update({ title, content, deadline }).eq('id', editingPolicyId);
+        if (error) { toast('Error: ' + error.message); return; }
+        const existing = cache.assignments.filter(a => a.policy_id === editingPolicyId);
+        for (const empId of selected) {
+          if (!existing.find(a => a.employee_id === empId)) {
+            await supabase.from('assignments').insert({ id: uid(), policy_id: editingPolicyId, employee_id: empId, token: uid()+uid(), status: 'pending' });
           }
-        });
-
-        save(data);
+        }
+        for (const a of existing) {
+          if (!selected.includes(a.employee_id) && a.status === 'pending') {
+            await supabase.from('assignments').delete().eq('id', a.id);
+          }
+        }
+        await refreshCache();
         toast('Policy updated!');
         resetCreateForm();
         showPage('live');
         return;
       }
 
-      const assignments = selected.map(empId => ({
-        employeeId: empId,
-        token: uid() + uid(),
-        status: 'pending',
-        confirmedAt: null,
-        signature: null,
-        userAgent: null
-      }));
+      // Create new
+      const policyId = uid();
+      const { error: pErr } = await supabase.from('policies').insert({ id: policyId, title, content, deadline });
+      if (pErr) { toast('Error: ' + pErr.message); return; }
 
-      const newPolicy = {
-        id: uid(),
-        title,
-        content,
-        deadline: deadline || null,
-        createdAt: new Date().toISOString(),
-        assignments
-      };
-      data.policies.push(newPolicy);
-      save(data);
+      const emailItems = [];
+      for (const empId of selected) {
+        const token = uid() + uid();
+        await supabase.from('assignments').insert({ id: uid(), policy_id: policyId, employee_id: empId, token, status: 'pending' });
+        const emp = cache.employees.find(e => e.id === empId);
+        if (emp && emp.email) {
+          emailItems.push({
+            to: emp.email,
+            name: emp.name,
+            policyTitle: title,
+            link: location.origin + location.pathname + '#confirm=' + token
+          });
+        }
+      }
 
+      await refreshCache();
       document.getElementById('policy-title').value = '';
       document.getElementById('policy-content').value = '';
       document.getElementById('policy-deadline').value = '';
 
-      lastPublished = {
-        policy: newPolicy,
-        items: assignments.map(a => {
-          const emp = data.employees.find(e => e.id === a.employeeId);
-          return {
-            name: emp ? emp.name : 'Staff',
-            phone: emp ? emp.phone : '',
-            token: a.token,
-            link: location.origin + location.pathname + '#confirm=' + a.token
-          };
-        })
-      };
-
-      toast(selected.length ? 'Policy published!' : 'Policy saved (no one assigned yet)');
-      if (selected.length) {
-        showSendSmsModal();
-      } else {
-        showPage('live');
-      }
-    }
-
-    function showSendSmsModal() {
-      if (!lastPublished) return;
-      const list = document.getElementById('send-sms-list');
-      list.innerHTML = lastPublished.items.map(item => {
-        if (!item.phone) {
-          return `
-            <div class="border border-gray-200 rounded-2xl p-4">
-              <div class="font-medium text-sm">${escapeHtml(item.name)}</div>
-              <p class="text-xs text-red-500 mt-1">No phone number</p>
-            </div>
-          `;
+      if (emailItems.length) {
+        document.getElementById('sending-overlay').classList.remove('hidden');
+        document.getElementById('sending-text').textContent = 'Sending ' + emailItems.length + ' email(s)...';
+        try {
+          const res = await fetch('/api/send-emails', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ emails: emailItems })
+          });
+          const data = await res.json();
+          document.getElementById('sending-overlay').classList.add('hidden');
+          if (res.ok) {
+            toast('Policy published & emails sent!');
+          } else {
+            toast('Policy saved, but email failed: ' + (data.error || 'unknown'));
+          }
+        } catch (err) {
+          document.getElementById('sending-overlay').classList.add('hidden');
+          toast('Policy saved. Email sending failed – check API.');
+          console.error(err);
         }
-        const message = encodeURIComponent(
-          'Hi ' + item.name + ', please review and confirm this policy from LAM Nail Spa:\n\n' +
-          lastPublished.policy.title + '\n\n' +
-          'Open this link to read & sign:\n' + item.link
-        );
-        // Clean phone number (keep + and digits)
-        const cleanPhone = item.phone.replace(/[^\d+]/g, '');
-        const smsLink = 'sms:' + cleanPhone + '?body=' + message;
-        return `
-          <div class="border border-gray-200 rounded-2xl p-4">
-            <div class="flex justify-between items-center mb-2">
-              <div>
-                <div class="font-medium text-sm">${escapeHtml(item.name)}</div>
-                <div class="text-xs text-gray-500">${escapeHtml(item.phone)}</div>
-              </div>
-            </div>
-            <a href="${smsLink}" class="block w-full text-center bg-brand-purple text-white text-sm font-semibold py-2.5 rounded-xl">
-              Send SMS
-            </a>
-          </div>
-        `;
-      }).join('');
-      document.getElementById('modal-send-sms').classList.remove('hidden');
-    }
-
-    function closeSendSms() {
-      document.getElementById('modal-send-sms').classList.add('hidden');
+      } else {
+        toast(selected.length ? 'Policy published (no emails found)' : 'Policy saved (no one assigned)');
+      }
       showPage('live');
     }
 
     function renderLive() {
-      const data = load();
       const list = document.getElementById('live-list');
       const empty = document.getElementById('live-empty');
-      if (!data.policies.length) {
-        list.innerHTML = '';
-        empty.classList.remove('hidden');
-        return;
-      }
+      if (!cache.policies.length) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
       empty.classList.add('hidden');
-      list.innerHTML = data.policies.slice().reverse().map(p => {
-        const confirmed = p.assignments.filter(a => a.status === 'confirmed').length;
-        const total = p.assignments.length;
+      list.innerHTML = cache.policies.map(p => {
+        const assigns = cache.assignments.filter(a => a.policy_id === p.id);
+        const confirmed = assigns.filter(a => a.status === 'confirmed').length;
+        const total = assigns.length;
         return `
           <div class="card p-5">
-            <div class="flex-1 min-w-0" onclick="openDetail('${p.id}')">
+            <div onclick="openDetail('${p.id}')">
               <div class="flex items-center gap-2">
                 <span class="text-lg">📋</span>
                 <h3 class="font-bold text-gray-900">Current Policy</h3>
@@ -615,12 +529,10 @@
               </div>
               <h4 class="text-base font-semibold text-gray-900 mt-2">${escapeHtml(p.title)}</h4>
               ${p.deadline ? `<p class="text-xs text-gray-500 mt-1">Deadline: ${p.deadline}</p>` : ''}
-              <p class="text-sm text-gray-600 mt-2 line-clamp-2">${escapeHtml(p.content.substring(0, 100))}${p.content.length > 100 ? '…' : ''}</p>
+              <p class="text-sm text-gray-600 mt-2 line-clamp-2">${escapeHtml((p.content||'').substring(0,100))}${(p.content||'').length>100?'…':''}</p>
               <div class="mt-3 text-sm">
-                ${total === 0
-                  ? '<span class="text-gray-400 font-medium">Not assigned yet</span>'
-                  : `<span class="font-semibold ${confirmed === total ? 'text-green-600' : 'text-orange-500'}">${confirmed}/${total}</span><span class="text-gray-500"> confirmed</span>`
-                }
+                ${total === 0 ? '<span class="text-gray-400 font-medium">Not assigned yet</span>'
+                  : `<span class="font-semibold ${confirmed===total?'text-green-600':'text-orange-500'}">${confirmed}/${total}</span><span class="text-gray-500"> confirmed</span>`}
               </div>
             </div>
             <div class="flex gap-2 mt-4 pt-3 border-t border-gray-100">
@@ -628,150 +540,105 @@
               <button onclick="startEditFromList('${p.id}')" class="flex-1 text-sm font-medium text-gray-700 py-2 rounded-xl bg-gray-100">Edit</button>
               <button onclick="deletePolicyById('${p.id}')" class="flex-1 text-sm font-medium text-red-600 py-2 rounded-xl bg-red-50">Delete</button>
             </div>
-          </div>
-        `;
+          </div>`;
       }).join('');
     }
 
     function openDetail(id) {
       detailPolicyId = id;
-      const data = load();
-      const p = data.policies.find(x => x.id === id);
+      const p = cache.policies.find(x => x.id === id);
       if (!p) return;
       document.getElementById('detail-title').textContent = p.title;
-      document.getElementById('detail-meta').textContent = (p.deadline ? 'Deadline: ' + p.deadline + '  •  ' : '') + 'Created ' + fmt(p.createdAt);
+      document.getElementById('detail-meta').textContent = (p.deadline ? 'Deadline: ' + p.deadline + '  •  ' : '') + 'Created ' + fmt(p.created_at);
       document.getElementById('detail-content').textContent = p.content;
-
-      document.getElementById('detail-status').innerHTML = p.assignments.map(a => {
-        const emp = data.employees.find(e => e.id === a.employeeId);
+      const assigns = cache.assignments.filter(a => a.policy_id === id);
+      document.getElementById('detail-status').innerHTML = assigns.map(a => {
+        const emp = cache.employees.find(e => e.id === a.employee_id);
         const name = emp ? emp.name : 'Unknown';
-        const phone = emp ? emp.phone : '';
         if (a.status === 'confirmed') {
-          return `
-            <div class="border border-green-200 bg-green-50 rounded-2xl p-3">
-              <div class="flex justify-between items-center">
-                <span class="font-medium text-sm">${escapeHtml(name)}</span>
-                <span class="text-xs font-semibold text-green-700">Confirmed</span>
-              </div>
-              <div class="text-xs text-green-700 mt-0.5">${fmt(a.confirmedAt)}</div>
-              ${a.signature ? `<img src="${a.signature}" class="mt-2 max-h-16 rounded border border-green-200 bg-white" />` : ''}
-            </div>
-          `;
+          return `<div class="border border-green-200 bg-green-50 rounded-2xl p-3">
+            <div class="flex justify-between items-center"><span class="font-medium text-sm">${escapeHtml(name)}</span><span class="text-xs font-semibold text-green-700">Confirmed</span></div>
+            <div class="text-xs text-green-700 mt-0.5">${fmt(a.confirmed_at)}</div>
+            ${a.signature ? `<img src="${a.signature}" class="mt-2 max-h-16 rounded border border-green-200 bg-white" />` : ''}
+          </div>`;
         }
         const link = location.origin + location.pathname + '#confirm=' + a.token;
-        const message = encodeURIComponent('Hi ' + name + ', please confirm this policy from LAM Nail Spa:\n\n' + p.title + '\n\nOpen link to sign:\n' + link);
-        const cleanPhone = (phone || '').replace(/[^\d+]/g, '');
-        const smsLink = cleanPhone ? 'sms:' + cleanPhone + '?body=' + message : '';
-        return `
-          <div class="border border-gray-200 rounded-2xl p-3">
-            <div class="flex justify-between items-center mb-2">
-              <span class="font-medium text-sm">${escapeHtml(name)}</span>
-              <span class="text-xs font-semibold text-orange-500">Pending</span>
-            </div>
-            <div class="flex gap-2">
-              <input type="text" readonly value="${link}" class="flex-1 text-[11px] bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-2" id="lnk-${a.token}" />
-              <button onclick="event.stopPropagation(); copyLink('${a.token}')" class="bg-gray-800 text-white text-xs font-semibold px-3 py-2 rounded-xl">Copy</button>
-            </div>
-            ${smsLink ? `<a href="${smsLink}" class="mt-2 block w-full text-center bg-brand-purple text-white text-xs font-semibold py-2 rounded-xl">Send SMS</a>` : ''}
+        return `<div class="border border-gray-200 rounded-2xl p-3">
+          <div class="flex justify-between items-center mb-2"><span class="font-medium text-sm">${escapeHtml(name)}</span><span class="text-xs font-semibold text-orange-500">Pending</span></div>
+          <div class="flex gap-2">
+            <input type="text" readonly value="${link}" class="flex-1 text-[11px] bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-2" id="lnk-${a.token}" />
+            <button onclick="event.stopPropagation(); copyLink('${a.token}')" class="bg-gray-800 text-white text-xs font-semibold px-3 py-2 rounded-xl">Copy</button>
           </div>
-        `;
-      }).join('');
+        </div>`;
+      }).join('') || '<p class="text-sm text-gray-400">No one assigned yet</p>';
       document.getElementById('modal-detail').classList.remove('hidden');
     }
 
-    function closeDetail() {
-      document.getElementById('modal-detail').classList.add('hidden');
-      detailPolicyId = null;
-    }
-
+    function closeDetail() { document.getElementById('modal-detail').classList.add('hidden'); detailPolicyId = null; }
     function copyLink(token) {
       const el = document.getElementById('lnk-' + token);
       navigator.clipboard.writeText(el.value).then(() => toast('Link copied!')).catch(() => { el.select(); toast('Press Ctrl+C'); });
     }
-
     function startEditFromList(id) { startEditPolicy(id); }
 
     function startEditPolicy(id) {
       const policyId = id || detailPolicyId;
       if (!policyId) return;
-      const data = load();
-      const p = data.policies.find(x => x.id === policyId);
+      const p = cache.policies.find(x => x.id === policyId);
       if (!p) return;
-
       editingPolicyId = policyId;
       closeDetail();
-
       document.getElementById('create-heading').textContent = 'Edit Policy';
       document.getElementById('btn-publish').textContent = 'Save Changes';
       document.getElementById('btn-cancel-edit').classList.remove('hidden');
       document.getElementById('policy-title').value = p.title;
       document.getElementById('policy-content').value = p.content;
       document.getElementById('policy-deadline').value = p.deadline || '';
-
-      const selectedIds = p.assignments.map(a => a.employeeId);
+      const selectedIds = cache.assignments.filter(a => a.policy_id === policyId).map(a => a.employee_id);
       showPage('create');
       renderAssignList(selectedIds);
     }
 
-    function deletePolicy() {
-      if (!detailPolicyId) return;
-      deletePolicyById(detailPolicyId);
-    }
-
-    function deletePolicyById(id) {
-      if (!confirm('Delete this policy permanently?\n\nAll confirmation records for this policy will also be removed.')) return;
-      const data = load();
-      data.policies = data.policies.filter(p => p.id !== id);
-      save(data);
+    async function deletePolicy() { if (detailPolicyId) await deletePolicyById(detailPolicyId); }
+    async function deletePolicyById(id) {
+      if (!confirm('Delete this policy permanently?')) return;
+      await supabase.from('assignments').delete().eq('policy_id', id);
+      const { error } = await supabase.from('policies').delete().eq('id', id);
+      if (error) { toast('Error: ' + error.message); return; }
+      await refreshCache();
       closeDetail();
       renderLive();
       renderDashboard();
       toast('Policy deleted');
     }
 
-    // ========== EMPLOYEE FLOW ==========
-    function handleEmployeeLink(token) {
-      const data = load();
-      let found = null;
-      for (const p of data.policies) {
-        const a = p.assignments.find(x => x.token === token);
-        if (a) { found = { policy: p, assignment: a }; break; }
-      }
-      if (!found) {
-        document.body.innerHTML = `
-          <div class="min-h-screen flex items-center justify-center px-6 text-center bg-gray-100">
-            <div>
-              <img src="logo.jpg" class="h-16 mx-auto mb-4 object-contain" />
-              <h1 class="text-xl font-bold">Invalid link</h1>
-              <p class="text-gray-500 mt-2 text-sm">This confirmation link is not valid.</p>
-            </div>
-          </div>`;
+    // ========== EMPLOYEE ==========
+    async function handleEmployeeLink(token) {
+      await refreshCache();
+      const assignment = cache.assignments.find(a => a.token === token);
+      if (!assignment) {
+        document.body.innerHTML = `<div class="min-h-screen flex items-center justify-center px-6 text-center bg-gray-100"><div>
+          <img src="logo.jpg" class="h-16 mx-auto mb-4 object-contain" /><h1 class="text-xl font-bold">Invalid link</h1>
+          <p class="text-gray-500 mt-2 text-sm">This confirmation link is not valid.</p></div></div>`;
         return;
       }
-
       currentToken = token;
-      currentEmployeeId = found.assignment.employeeId;
-      sessionStorage.setItem('lam_emp_id', currentEmployeeId);
-
-      if (found.assignment.status === 'confirmed') {
-        showEmployeePortal();
-        return;
-      }
-
+      currentEmployeeId = assignment.employee_id;
+      const policy = cache.policies.find(p => p.id === assignment.policy_id);
+      if (assignment.status === 'confirmed') { showEmployeePortal(); return; }
       document.getElementById('confirm-view').classList.remove('hidden');
-      const emp = data.employees.find(e => e.id === currentEmployeeId);
+      const emp = cache.employees.find(e => e.id === currentEmployeeId);
       document.getElementById('confirm-emp-name').textContent = emp ? 'For: ' + emp.name : 'For: Staff';
-      document.getElementById('confirm-title').textContent = found.policy.title;
-      document.getElementById('confirm-content').textContent = found.policy.content;
-      document.getElementById('confirm-deadline').textContent = found.policy.deadline ? 'Deadline: ' + found.policy.deadline : '';
+      document.getElementById('confirm-title').textContent = policy ? policy.title : '';
+      document.getElementById('confirm-content').textContent = policy ? policy.content : '';
+      document.getElementById('confirm-deadline').textContent = policy && policy.deadline ? 'Deadline: ' + policy.deadline : '';
       setTimeout(() => initSignaturePad('signature-canvas'), 60);
     }
 
     function showEmployeePortal() {
       document.getElementById('confirm-view').classList.add('hidden');
       document.getElementById('employee-view').classList.remove('hidden');
-      const data = load();
-      const emp = data.employees.find(e => e.id === currentEmployeeId);
+      const emp = cache.employees.find(e => e.id === currentEmployeeId);
       document.getElementById('emp-welcome').textContent = emp ? 'Welcome, ' + emp.name : 'Welcome';
       showEmpTab('pending');
     }
@@ -779,115 +646,70 @@
     function showEmpTab(tab) {
       document.querySelectorAll('.emp-panel').forEach(p => p.classList.add('hidden'));
       document.getElementById('emp-' + tab).classList.remove('hidden');
-      document.querySelectorAll('.emp-tab').forEach(b => {
-        b.classList.remove('bg-brand-purple', 'text-white');
-        b.classList.add('text-gray-600');
-      });
-      const active = document.querySelector('[data-emptab="' + tab + '"]');
-      if (active) {
-        active.classList.add('bg-brand-purple', 'text-white');
-        active.classList.remove('text-gray-600');
-      }
+      document.querySelectorAll('.emp-tab').forEach(b => { b.classList.remove('bg-brand-purple','text-white'); b.classList.add('text-gray-600'); });
+      const active = document.querySelector('[data-emptab="'+tab+'"]');
+      if (active) { active.classList.add('bg-brand-purple','text-white'); active.classList.remove('text-gray-600'); }
       renderEmpLists();
     }
 
     function renderEmpLists() {
-      const data = load();
-      const pending = [];
-      const confirmed = [];
-
-      data.policies.forEach(p => {
-        const a = p.assignments.find(x => x.employeeId === currentEmployeeId);
-        if (!a) return;
-        const item = { policy: p, assignment: a };
-        if (a.status === 'confirmed') confirmed.push(item);
-        else pending.push(item);
+      const myAssigns = cache.assignments.filter(a => a.employee_id === currentEmployeeId);
+      const pending = [], confirmed = [];
+      myAssigns.forEach(a => {
+        const policy = cache.policies.find(p => p.id === a.policy_id);
+        if (!policy) return;
+        const item = { policy, assignment: a };
+        if (a.status === 'confirmed') confirmed.push(item); else pending.push(item);
       });
 
       const pendEl = document.getElementById('emp-pending');
-      if (!pending.length) {
-        pendEl.innerHTML = `<div class="card py-12 text-center text-gray-400 text-sm">No pending policies</div>`;
-      } else {
-        pendEl.innerHTML = pending.map(item => `
-          <div class="card p-4" onclick="openEmpPolicy('${item.policy.id}')">
-            <div class="flex justify-between items-start">
-              <div>
-                <h3 class="font-semibold text-gray-900">${escapeHtml(item.policy.title)}</h3>
-                ${item.policy.deadline ? `<p class="text-xs text-gray-500 mt-0.5">Deadline: ${item.policy.deadline}</p>` : ''}
-              </div>
-              <span class="text-xs font-semibold text-orange-500 bg-orange-50 px-2.5 py-1 rounded-full">Pending</span>
-            </div>
-            <p class="text-sm text-gray-600 mt-2 line-clamp-2">${escapeHtml(item.policy.content.substring(0, 90))}…</p>
-            <div class="mt-3 text-xs text-brand-purple font-medium">Tap to read & confirm →</div>
-          </div>
-        `).join('');
-      }
+      pendEl.innerHTML = !pending.length ? `<div class="card py-12 text-center text-gray-400 text-sm">No pending policies</div>` :
+        pending.map(item => `<div class="card p-4" onclick="openEmpPolicy('${item.policy.id}')">
+          <div class="flex justify-between items-start"><div><h3 class="font-semibold text-gray-900">${escapeHtml(item.policy.title)}</h3>
+          ${item.policy.deadline?`<p class="text-xs text-gray-500 mt-0.5">Deadline: ${item.policy.deadline}</p>`:''}</div>
+          <span class="text-xs font-semibold text-orange-500 bg-orange-50 px-2.5 py-1 rounded-full">Pending</span></div>
+          <p class="text-sm text-gray-600 mt-2 line-clamp-2">${escapeHtml((item.policy.content||'').substring(0,90))}…</p>
+          <div class="mt-3 text-xs text-brand-purple font-medium">Tap to read & confirm →</div></div>`).join('');
 
       const confEl = document.getElementById('emp-confirmed');
-      if (!confirmed.length) {
-        confEl.innerHTML = `<div class="card py-12 text-center text-gray-400 text-sm">No confirmed policies yet</div>`;
-      } else {
-        confEl.innerHTML = confirmed.map(item => `
-          <div class="card p-4" onclick="openEmpPolicy('${item.policy.id}')">
-            <div class="flex justify-between items-start">
-              <div>
-                <h3 class="font-semibold text-gray-900">${escapeHtml(item.policy.title)}</h3>
-                <p class="text-xs text-green-600 mt-0.5">Confirmed ${fmt(item.assignment.confirmedAt)}</p>
-              </div>
-              <span class="text-xs font-semibold text-green-600 bg-green-50 px-2.5 py-1 rounded-full">Done</span>
-            </div>
-          </div>
-        `).join('');
-      }
+      confEl.innerHTML = !confirmed.length ? `<div class="card py-12 text-center text-gray-400 text-sm">No confirmed policies yet</div>` :
+        confirmed.map(item => `<div class="card p-4" onclick="openEmpPolicy('${item.policy.id}')">
+          <div class="flex justify-between items-start"><div><h3 class="font-semibold text-gray-900">${escapeHtml(item.policy.title)}</h3>
+          <p class="text-xs text-green-600 mt-0.5">Confirmed ${fmt(item.assignment.confirmed_at)}</p></div>
+          <span class="text-xs font-semibold text-green-600 bg-green-50 px-2.5 py-1 rounded-full">Done</span></div></div>`).join('');
 
       const histEl = document.getElementById('emp-history');
-      if (!confirmed.length) {
-        histEl.innerHTML = `<div class="card py-12 text-center text-gray-400 text-sm">No signature history yet</div>`;
-      } else {
-        histEl.innerHTML = confirmed.map(item => `
-          <div class="card p-4">
-            <div class="flex justify-between items-start mb-2">
-              <h3 class="font-semibold text-gray-900 text-sm">${escapeHtml(item.policy.title)}</h3>
-              <span class="text-xs text-gray-500">${fmt(item.assignment.confirmedAt)}</span>
-            </div>
-            ${item.assignment.signature ? `<img src="${item.assignment.signature}" class="max-h-20 border rounded-xl bg-white" alt="Signature" />` : '<p class="text-xs text-gray-400">No signature image</p>'}
-          </div>
-        `).join('');
-      }
+      histEl.innerHTML = !confirmed.length ? `<div class="card py-12 text-center text-gray-400 text-sm">No signature history yet</div>` :
+        confirmed.map(item => `<div class="card p-4"><div class="flex justify-between items-start mb-2">
+          <h3 class="font-semibold text-gray-900 text-sm">${escapeHtml(item.policy.title)}</h3>
+          <span class="text-xs text-gray-500">${fmt(item.assignment.confirmed_at)}</span></div>
+          ${item.assignment.signature?`<img src="${item.assignment.signature}" class="max-h-20 border rounded-xl bg-white" />`:'<p class="text-xs text-gray-400">No signature</p>'}</div>`).join('');
     }
 
     function openEmpPolicy(policyId) {
-      const data = load();
-      const p = data.policies.find(x => x.id === policyId);
-      if (!p) return;
-      const a = p.assignments.find(x => x.employeeId === currentEmployeeId);
+      const policy = cache.policies.find(x => x.id === policyId);
+      if (!policy) return;
+      const a = cache.assignments.find(x => x.policy_id === policyId && x.employee_id === currentEmployeeId);
       if (!a) return;
-
-      document.getElementById('emp-pol-title').textContent = p.title;
-      document.getElementById('emp-pol-meta').textContent = (p.deadline ? 'Deadline: ' + p.deadline + '  •  ' : '') + 'Created ' + fmt(p.createdAt);
-      document.getElementById('emp-pol-content').textContent = p.content;
-
+      document.getElementById('emp-pol-title').textContent = policy.title;
+      document.getElementById('emp-pol-meta').textContent = (policy.deadline?'Deadline: '+policy.deadline+'  •  ':'') + 'Created ' + fmt(policy.created_at);
+      document.getElementById('emp-pol-content').textContent = policy.content;
       if (a.status === 'confirmed') {
         document.getElementById('emp-pol-sign-form').classList.add('hidden');
         document.getElementById('emp-pol-already').classList.remove('hidden');
-        document.getElementById('emp-pol-confirmed-time').textContent = 'Confirmed on ' + fmt(a.confirmedAt);
-        document.getElementById('emp-pol-sig').innerHTML = a.signature
-          ? `<img src="${a.signature}" class="mx-auto max-h-24 border rounded-xl bg-white" />`
-          : '';
+        document.getElementById('emp-pol-confirmed-time').textContent = 'Confirmed on ' + fmt(a.confirmed_at);
+        document.getElementById('emp-pol-sig').innerHTML = a.signature ? `<img src="${a.signature}" class="mx-auto max-h-24 border rounded-xl bg-white" />` : '';
       } else {
         document.getElementById('emp-pol-already').classList.add('hidden');
         document.getElementById('emp-pol-sign-form').classList.remove('hidden');
         document.getElementById('emp-confirm-check').checked = false;
         setTimeout(() => initSignaturePad('emp-signature-canvas'), 50);
       }
-
-      window._empCurrent = { policyId, token: a.token };
+      window._empCurrent = { policyId, token: a.token, assignmentId: a.id };
       document.getElementById('modal-emp-policy').classList.remove('hidden');
     }
 
-    function closeEmpPolicy() {
-      document.getElementById('modal-emp-policy').classList.add('hidden');
-    }
+    function closeEmpPolicy() { document.getElementById('modal-emp-policy').classList.add('hidden'); }
 
     function initSignaturePad(canvasId) {
       const canvas = document.getElementById(canvasId);
@@ -897,121 +719,67 @@
       canvas.height = canvas.offsetHeight * ratio;
       const ctx = canvas.getContext('2d');
       ctx.scale(ratio, ratio);
-      ctx.lineWidth = 2.5;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.strokeStyle = '#111';
-
+      ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#111';
       let drawing = false, lastX = 0, lastY = 0;
       function pos(e) {
         const r = canvas.getBoundingClientRect();
-        const x = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
-        const y = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
-        return { x, y };
+        return { x: (e.touches ? e.touches[0].clientX : e.clientX) - r.left, y: (e.touches ? e.touches[0].clientY : e.clientY) - r.top };
       }
       function start(e) { e.preventDefault(); drawing = true; const p = pos(e); lastX = p.x; lastY = p.y; canvas.classList.add('signed'); }
-      function move(e) {
-        if (!drawing) return;
-        e.preventDefault();
-        const p = pos(e);
-        ctx.beginPath();
-        ctx.moveTo(lastX, lastY);
-        ctx.lineTo(p.x, p.y);
-        ctx.stroke();
-        lastX = p.x; lastY = p.y;
-      }
+      function move(e) { if (!drawing) return; e.preventDefault(); const p = pos(e); ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke(); lastX = p.x; lastY = p.y; }
       function end(e) { e.preventDefault(); drawing = false; }
-
-      canvas.onmousedown = start;
-      canvas.onmousemove = move;
-      canvas.onmouseup = end;
-      canvas.onmouseleave = end;
-      canvas.ontouchstart = start;
-      canvas.ontouchmove = move;
-      canvas.ontouchend = end;
+      canvas.onmousedown = start; canvas.onmousemove = move; canvas.onmouseup = end; canvas.onmouseleave = end;
+      canvas.ontouchstart = start; canvas.ontouchmove = move; canvas.ontouchend = end;
     }
 
     function clearSignature() {
       const canvas = document.getElementById('signature-canvas');
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
       canvas.classList.remove('signed');
     }
     function clearEmpSignature() {
       const canvas = document.getElementById('emp-signature-canvas');
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
       canvas.classList.remove('signed');
     }
-
     function hasInk(canvas) {
-      const ctx = canvas.getContext('2d');
-      const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-      for (let i = 3; i < pixels.length; i += 4) {
-        if (pixels[i] > 0) return true;
-      }
+      const pixels = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data;
+      for (let i = 3; i < pixels.length; i += 4) if (pixels[i] > 0) return true;
       return false;
     }
 
-    function submitConfirmation() {
-      if (!document.getElementById('confirm-check').checked) {
-        toast('Please check the confirmation box'); return;
-      }
+    async function submitConfirmation() {
+      if (!document.getElementById('confirm-check').checked) { toast('Please check the confirmation box'); return; }
       const canvas = document.getElementById('signature-canvas');
       if (!hasInk(canvas)) { toast('Please provide your signature'); return; }
-
-      const data = load();
-      let assignment = null;
-      for (const p of data.policies) {
-        const a = p.assignments.find(x => x.token === currentToken);
-        if (a) { assignment = a; break; }
-      }
-      if (!assignment || assignment.status === 'confirmed') return;
-
-      assignment.status = 'confirmed';
-      assignment.confirmedAt = new Date().toISOString();
-      assignment.signature = canvas.toDataURL('image/png');
-      assignment.userAgent = navigator.userAgent;
-      save(data);
-
+      const { error } = await supabase.from('assignments').update({
+        status: 'confirmed', confirmed_at: new Date().toISOString(),
+        signature: canvas.toDataURL('image/png'), user_agent: navigator.userAgent
+      }).eq('token', currentToken);
+      if (error) { toast('Error: ' + error.message); return; }
+      await refreshCache();
       toast('Thank you! Confirmation recorded.');
       setTimeout(() => showEmployeePortal(), 600);
     }
 
-    function submitEmpConfirmation() {
+    async function submitEmpConfirmation() {
       if (!window._empCurrent) return;
-      if (!document.getElementById('emp-confirm-check').checked) {
-        toast('Please check the confirmation box'); return;
-      }
+      if (!document.getElementById('emp-confirm-check').checked) { toast('Please check the confirmation box'); return; }
       const canvas = document.getElementById('emp-signature-canvas');
       if (!hasInk(canvas)) { toast('Please provide your signature'); return; }
-
-      const data = load();
-      const p = data.policies.find(x => x.id === window._empCurrent.policyId);
-      if (!p) return;
-      const a = p.assignments.find(x => x.token === window._empCurrent.token);
-      if (!a || a.status === 'confirmed') return;
-
-      a.status = 'confirmed';
-      a.confirmedAt = new Date().toISOString();
-      a.signature = canvas.toDataURL('image/png');
-      a.userAgent = navigator.userAgent;
-      save(data);
-
+      const { error } = await supabase.from('assignments').update({
+        status: 'confirmed', confirmed_at: new Date().toISOString(),
+        signature: canvas.toDataURL('image/png'), user_agent: navigator.userAgent
+      }).eq('id', window._empCurrent.assignmentId);
+      if (error) { toast('Error: ' + error.message); return; }
+      await refreshCache();
       toast('Confirmed!');
       closeEmpPolicy();
       renderEmpLists();
     }
 
-    document.getElementById('modal-detail').addEventListener('click', e => {
-      if (e.target.id === 'modal-detail') closeDetail();
-    });
-    document.getElementById('modal-emp-policy').addEventListener('click', e => {
-      if (e.target.id === 'modal-emp-policy') closeEmpPolicy();
-    });
-    document.getElementById('modal-send-sms').addEventListener('click', e => {
-      if (e.target.id === 'modal-send-sms') closeSendSms();
-    });
+    document.getElementById('modal-detail').addEventListener('click', e => { if (e.target.id === 'modal-detail') closeDetail(); });
+    document.getElementById('modal-emp-policy').addEventListener('click', e => { if (e.target.id === 'modal-emp-policy') closeEmpPolicy(); });
 
     init();
   </script>
