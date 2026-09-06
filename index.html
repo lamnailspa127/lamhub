@@ -242,7 +242,7 @@
           <div id="detail-status" class="space-y-2"></div>
         </div>
         <div class="flex flex-col gap-2 pt-2 border-t border-gray-100">
-          <button onclick="republishPolicy()" class="w-full bg-brand-purple text-white font-semibold py-3 rounded-2xl text-sm">Publish / Send Again</button>
+          <button onclick="openRepublishModal()" class="w-full bg-brand-purple text-white font-semibold py-3 rounded-2xl text-sm">Publish / Send Again</button>
           <div class="flex gap-3">
             <button onclick="startEditPolicy()" class="flex-1 border border-gray-300 text-gray-800 font-semibold py-3 rounded-2xl text-sm">Edit Policy</button>
             <button onclick="deletePolicy()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-2xl text-sm">Delete Policy</button>
@@ -321,6 +321,20 @@
       <div class="p-5 space-y-3">
         <div class="text-xs text-gray-500" id="lib-pol-meta"></div>
         <div class="bg-gray-50 rounded-2xl p-4 text-sm whitespace-pre-wrap leading-relaxed" id="lib-pol-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Republish choice modal -->
+  <div id="modal-republish" class="hidden fixed inset-0 z-[60] bg-black/40 flex items-center justify-center px-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-5 relative shadow-xl">
+      <button onclick="closeRepublishModal()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-xl leading-none">&times;</button>
+      <h3 class="font-bold text-lg pr-8">Publish / Send Again</h3>
+      <p class="text-sm text-gray-600 mt-2">Who should receive the email?</p>
+      <div class="flex flex-col gap-2 mt-5">
+        <button onclick="doRepublish(true)" class="w-full bg-brand-purple text-white font-semibold py-3 rounded-2xl text-sm">Send to ALL assigned staff</button>
+        <button onclick="doRepublish(false)" class="w-full border border-gray-300 text-gray-800 font-semibold py-3 rounded-2xl text-sm">Only staff still Pending</button>
+        <button onclick="closeRepublishModal()" class="w-full text-gray-500 font-medium py-2 text-sm">Cancel</button>
       </div>
     </div>
   </div>
@@ -779,19 +793,24 @@
       toast('Policy deleted');
     }
 
-    async function republishPolicy() {
+        function openRepublishModal() {
+      if (!detailPolicyId) return;
+      document.getElementById('modal-republish').classList.remove('hidden');
+    }
+    function closeRepublishModal() {
+      document.getElementById('modal-republish').classList.add('hidden');
+    }
+
+    async function doRepublish(sendToAll) {
+      closeRepublishModal();
       if (!detailPolicyId) return;
       const p = cache.policies.find(x => x.id === detailPolicyId);
       if (!p) return;
       const assigns = cache.assignments.filter(a => a.policy_id === detailPolicyId);
       if (!assigns.length) { toast('No staff assigned. Edit policy to assign staff first.'); return; }
 
-      // Email pending staff (and optionally all - we email pending only, or all if user wants "again")
-      // User asked to publish again for new staff or after edit - so email anyone still pending
-      // Also allow emailing everyone again for re-confirmation of important updates
-      const sendToAll = confirm('Send emails to ALL assigned staff?\n\nOK = everyone\nCancel = only staff still Pending');
       const targets = sendToAll ? assigns : assigns.filter(a => a.status === 'pending');
-      if (!targets.length) { toast('No one to email (all already confirmed). Use OK next time to email everyone.'); return; }
+      if (!targets.length) { toast('No pending staff to email.'); return; }
 
       const emailItems = targets.map(a => {
         const emp = cache.employees.find(e => e.id === a.employee_id);
@@ -1011,6 +1030,7 @@
     document.getElementById('modal-emp-policy').addEventListener('click', e => { if (e.target.id === 'modal-emp-policy') closeEmpPolicy(); });
     document.getElementById('modal-edit-employee').addEventListener('click', e => { if (e.target.id === 'modal-edit-employee') closeEditEmployee(); });
     document.getElementById('modal-library-policy').addEventListener('click', e => { if (e.target.id === 'modal-library-policy') closeLibraryPolicy(); });
+    document.getElementById('modal-republish').addEventListener('click', e => { if (e.target.id === 'modal-republish') closeRepublishModal(); });
 
     init();
   </script>
