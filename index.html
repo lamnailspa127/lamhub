@@ -367,7 +367,11 @@
               <label class="block text-xs font-medium text-gray-500 mb-1">Assign to</label>
               <select id="task-assignee" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm bg-white"></select>
             </div>
-            <button onclick="createTask()" class="w-full bg-brand-purple text-white font-semibold py-3.5 rounded-2xl">Create & Notify</button>
+            <button onclick="createTask('save')" class="w-full border border-gray-300 text-gray-800 font-semibold py-3 rounded-2xl">Save Task Only</button>
+            <div class="flex gap-2">
+              <button onclick="createTask('email')" class="flex-1 bg-brand-purple text-white font-semibold py-3 rounded-2xl">Email</button>
+              <button onclick="createTask('sms')" class="flex-1 bg-green-600 text-white font-semibold py-3 rounded-2xl">SMS</button>
+            </div>
           </div>
         </div>
         <div id="tasks-list" class="space-y-3"></div>
@@ -524,6 +528,38 @@
         <button onclick="closePendingModal()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xl text-gray-500">&times;</button>
       </div>
       <div class="p-5 space-y-3" id="pending-modal-body"></div>
+    </div>
+  </div>
+
+  
+  <div id="modal-edit-task" class="hidden fixed inset-0 z-[70] bg-black/40 flex items-end sm:items-center justify-center px-3">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-lg">Edit Task</h3>
+        <button type="button" onclick="closeEditTask()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xl text-gray-500">&times;</button>
+      </div>
+      <input type="hidden" id="edit-task-id" />
+      <div class="space-y-3">
+        <input id="edit-task-title" type="text" placeholder="Title" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
+        <textarea id="edit-task-desc" rows="3" placeholder="Details" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm"></textarea>
+        <input id="edit-task-deadline" type="date" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
+        <button type="button" onclick="saveEditTask()" class="w-full bg-brand-purple text-white font-semibold py-3 rounded-2xl">Save</button>
+      </div>
+    </div>
+  </div>
+  <div id="modal-transfer-task" class="hidden fixed inset-0 z-[70] bg-black/40 flex items-end sm:items-center justify-center px-3">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 shadow-xl">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-lg">Transfer Task</h3>
+        <button type="button" onclick="closeTransferTask()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xl text-gray-500">&times;</button>
+      </div>
+      <input type="hidden" id="transfer-task-id" />
+      <label class="block text-xs text-gray-500 mb-1">New assignee</label>
+      <select id="transfer-task-assignee" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm mb-3 bg-white"></select>
+      <div class="flex gap-2">
+        <button type="button" onclick="saveTransferTask('email')" class="flex-1 bg-brand-purple text-white font-semibold py-3 rounded-2xl text-sm">Transfer + Email</button>
+        <button type="button" onclick="saveTransferTask('sms')" class="flex-1 bg-green-600 text-white font-semibold py-3 rounded-2xl text-sm">Transfer + SMS</button>
+      </div>
     </div>
   </div>
 
@@ -807,8 +843,15 @@
     function fillTaskAssignees() {
       const sel = document.getElementById('task-assignee');
       if (!sel) return;
-      const staff = cache.employees.filter(e => e.role !== 'admin');
-      sel.innerHTML = staff.map(e => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join('') || '<option value="">No staff</option>';
+      const staff = cache.employees.filter(e => (e.role || 'staff') !== 'admin');
+      if (!staff.length) {
+        sel.innerHTML = '<option value="">No staff — add in Staff tab</option>';
+        return;
+      }
+      sel.innerHTML = staff.map(e => {
+        const label = (e.name || 'Unnamed') + (e.email ? ' — ' + e.email : '');
+        return '<option value="' + e.id + '">' + escapeHtml(label) + '</option>';
+      }).join('');
     }
 
     document.getElementById('task-photo')?.addEventListener('change', function(e) {
@@ -838,7 +881,8 @@
       reader.readAsDataURL(file);
     });
 
-    async function createTask() {
+    async function createTask(mode) {
+      mode = mode || 'save';
       const title = document.getElementById('task-title').value.trim();
       const description = document.getElementById('task-desc').value.trim();
       const deadline = document.getElementById('task-deadline').value || null;
@@ -847,53 +891,68 @@
       if (!assigneeId) { toast('Select staff'); return; }
       const emp = cache.employees.find(e => e.id === assigneeId);
       if (!emp) { toast('Staff not found'); return; }
+
       const token = uid() + uid();
       const id = uid();
+      // Avoid huge base64 failures: cap photo size in payload messaging
+      let photo = window._taskPhotoData || null;
+      if (photo && photo.length > 900000) {
+        toast('Photo too large, saving without photo');
+        photo = null;
+      }
       const { error } = await supabase.from('tasks').insert({
-        id, title, description, photo: window._taskPhotoData || null,
+        id, title, description, photo,
         assignee_id: assigneeId, token, status: 'pending', deadline
       });
       if (error) { toast('Error: ' + error.message); return; }
+
       const link = location.origin + location.pathname + '#task=' + token;
-      // Email
-      if (emp.email) {
-        try {
-          document.getElementById('sending-overlay').classList.remove('hidden');
-          document.getElementById('sending-text').textContent = 'Sending task email...';
-          await fetch('/api/send-emails', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              emails: [{
-                to: emp.email,
-                name: emp.name,
-                policyTitle: 'Task: ' + title,
-                link
-              }]
-            })
-          });
-          document.getElementById('sending-overlay').classList.add('hidden');
-        } catch (e) {
-          document.getElementById('sending-overlay').classList.add('hidden');
+
+      if (mode === 'email') {
+        if (!emp.email) { toast('Staff has no email'); }
+        else {
+          try {
+            document.getElementById('sending-overlay').classList.remove('hidden');
+            document.getElementById('sending-text').textContent = 'Sending email...';
+            const res = await fetch('/api/send-emails', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                emails: [{ to: emp.email, name: emp.name, policyTitle: 'Task: ' + title, link }]
+              })
+            });
+            const data = await res.json().catch(() => ({}));
+            document.getElementById('sending-overlay').classList.add('hidden');
+            if (res.ok) toast('Task saved & email sent');
+            else toast('Task saved, email failed: ' + (data.error || res.status));
+          } catch (e) {
+            document.getElementById('sending-overlay').classList.add('hidden');
+            toast('Task saved, email failed');
+            console.error(e);
+          }
         }
-      }
-      // Offer SMS if phone
-      if (emp.phone) {
-        const smsBody = encodeURIComponent('Hi ' + emp.name + ', new task from LAM NAIL SPA: ' + title + '\\n' + link);
-        const sms = 'sms:' + emp.phone.replace(/[^\d+]/g,'') + '?body=' + smsBody;
-        if (confirm('Email sent (if available). Open SMS to also text ' + emp.name + '?')) {
-          location.href = sms;
+      } else if (mode === 'sms') {
+        if (!emp.phone) {
+          toast('Task saved. Staff has no phone number.');
+        } else {
+          const smsBody = encodeURIComponent('Hi ' + emp.name + ', task from LAM NAIL SPA: ' + title + '\n' + link);
+          const sms = 'sms:' + String(emp.phone).replace(/[^\d+]/g, '') + '?body=' + smsBody;
+          toast('Task saved — opening SMS');
+          setTimeout(function() { window.location.href = sms; }, 300);
         }
+      } else {
+        toast('Task saved');
       }
+
       document.getElementById('task-title').value = '';
       document.getElementById('task-desc').value = '';
       document.getElementById('task-deadline').value = '';
       document.getElementById('task-photo').value = '';
-      document.getElementById('task-photo-preview').classList.add('hidden');
+      const prev = document.getElementById('task-photo-preview');
+      if (prev) { prev.classList.add('hidden'); prev.src = ''; }
       window._taskPhotoData = null;
       await refreshCache();
       renderTasks();
-      toast('Task created');
     }
 
     function renderTasks() {
@@ -933,12 +992,14 @@
 
     function openEditTask(id) {
       const task = cache.tasks.find(x => x.id === id);
-      if (!task) return;
+      if (!task) { toast('Task not found'); return; }
+      const modal = document.getElementById('modal-edit-task');
+      if (!modal) { toast('Edit form missing — please redeploy'); return; }
       document.getElementById('edit-task-id').value = task.id;
       document.getElementById('edit-task-title').value = task.title || '';
       document.getElementById('edit-task-desc').value = task.description || '';
       document.getElementById('edit-task-deadline').value = task.deadline || '';
-      document.getElementById('modal-edit-task').classList.remove('hidden');
+      modal.classList.remove('hidden');
     }
     function closeEditTask() { document.getElementById('modal-edit-task').classList.add('hidden'); }
 
@@ -958,16 +1019,22 @@
 
     function openTransferTask(id) {
       const task = cache.tasks.find(x => x.id === id);
-      if (!task) return;
+      if (!task) { toast('Task not found'); return; }
+      const modal = document.getElementById('modal-transfer-task');
+      if (!modal) { toast('Transfer form missing — please redeploy'); return; }
       document.getElementById('transfer-task-id').value = task.id;
       const sel = document.getElementById('transfer-task-assignee');
-      const staff = cache.employees.filter(e => e.role !== 'admin');
-      sel.innerHTML = staff.map(e => `<option value="${e.id}" ${e.id===task.assignee_id?'selected':''}>${escapeHtml(e.name)}</option>`).join('');
-      document.getElementById('modal-transfer-task').classList.remove('hidden');
+      const staff = cache.employees.filter(e => (e.role || 'staff') !== 'admin');
+      sel.innerHTML = staff.map(e => {
+        const label = (e.name || 'Unnamed') + (e.email ? ' — ' + e.email : '');
+        return '<option value="' + e.id + '"' + (e.id === task.assignee_id ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
+      }).join('');
+      modal.classList.remove('hidden');
     }
     function closeTransferTask() { document.getElementById('modal-transfer-task').classList.add('hidden'); }
 
-    async function saveTransferTask() {
+    async function saveTransferTask(mode) {
+      mode = mode || 'email';
       const id = document.getElementById('transfer-task-id').value;
       const assigneeId = document.getElementById('transfer-task-assignee').value;
       const task = cache.tasks.find(x => x.id === id);
@@ -984,27 +1051,32 @@
       if (error) { toast(error.message); return; }
       const emp = cache.employees.find(e => e.id === assigneeId);
       const link = location.origin + location.pathname + '#task=' + newToken;
-      if (emp && emp.email) {
+      closeTransferTask();
+      if (mode === 'email' && emp && emp.email) {
         try {
           document.getElementById('sending-overlay').classList.remove('hidden');
-          await fetch('/api/send-emails', {
+          const res = await fetch('/api/send-emails', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ emails: [{ to: emp.email, name: emp.name, policyTitle: 'Task: ' + task.title, link }] })
           });
           document.getElementById('sending-overlay').classList.add('hidden');
+          toast(res.ok ? 'Transferred & emailed' : 'Transferred, email failed');
         } catch (e) {
           document.getElementById('sending-overlay').classList.add('hidden');
+          toast('Transferred, email failed');
         }
-      }
-      if (emp && emp.phone && confirm('Also open SMS to notify ' + emp.name + '?')) {
+      } else if (mode === 'sms' && emp && emp.phone) {
         const smsBody = encodeURIComponent('Hi ' + emp.name + ', task from LAM NAIL SPA: ' + task.title + '\n' + link);
-        location.href = 'sms:' + emp.phone.replace(/[^\d+]/g,'') + '?body=' + smsBody;
+        toast('Transferred — opening SMS');
+        setTimeout(function() {
+          window.location.href = 'sms:' + String(emp.phone).replace(/[^\d+]/g, '') + '?body=' + smsBody;
+        }, 300);
+      } else {
+        toast('Transferred');
       }
       await refreshCache();
-      closeTransferTask();
       renderTasks();
-      toast('Task transferred');
     }
 
     async function deleteTask(id) {
