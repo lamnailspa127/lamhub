@@ -111,6 +111,36 @@
     </div>
   </div>
 
+
+  <!-- TASK STAFF VIEW -->
+  <div id="task-view" class="hidden min-h-screen bg-gray-100">
+    <div class="bg-black pt-8 pb-6 px-5 text-center">
+      <img src="logo.jpg" alt="LAM Nail Spa" class="h-16 mx-auto object-contain rounded-xl bg-white p-1.5" />
+      <h1 class="text-white text-xl font-bold mt-3">Task Assignment</h1>
+      <p class="text-gray-400 text-sm mt-1" id="task-view-emp"></p>
+    </div>
+    <div class="px-4 -mt-3 pb-8">
+      <div class="card p-5 space-y-4">
+        <h2 class="text-lg font-bold text-gray-900" id="task-view-title"></h2>
+        <p class="text-xs text-gray-500" id="task-view-deadline"></p>
+        <div class="text-sm text-gray-800 whitespace-pre-wrap" id="task-view-desc"></div>
+        <img id="task-view-photo" class="hidden w-full rounded-2xl border" />
+        <div id="task-view-actions" class="space-y-3 pt-2">
+          <button onclick="respondTask('accepted')" class="w-full bg-green-600 text-white font-semibold py-3.5 rounded-2xl">Accept</button>
+          <button onclick="showTaskDeny()" class="w-full border border-red-300 text-red-600 font-semibold py-3.5 rounded-2xl">Deny</button>
+        </div>
+        <div id="task-deny-box" class="hidden space-y-3">
+          <textarea id="task-deny-reason" rows="3" placeholder="Reason for denying (required)" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm"></textarea>
+          <button onclick="respondTask('denied')" class="w-full bg-red-500 text-white font-semibold py-3 rounded-2xl">Submit Deny</button>
+          <button onclick="hideTaskDeny()" class="w-full text-sm text-gray-500">Cancel</button>
+        </div>
+        <div id="task-view-done" class="hidden text-center py-4">
+          <p class="font-semibold text-gray-900" id="task-view-status"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ADMIN LOGIN -->
   <div id="login-view" class="hidden min-h-screen bg-gray-100 flex flex-col">
     <div class="bg-black pt-10 pb-8 px-5 text-center">
@@ -119,11 +149,34 @@
       <p class="text-gray-400 text-sm mt-1">Admin Login</p>
     </div>
     <div class="px-5 -mt-3 flex-1">
-      <div class="card p-6">
-        <label class="block text-sm font-semibold text-gray-800 mb-2">Password</label>
-        <input id="admin-password" type="password" placeholder="Enter admin password" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" onkeydown="if(event.key==='Enter')adminLogin()" />
-        <button onclick="adminLogin()" class="w-full mt-4 bg-brand-purple text-white font-semibold py-3.5 rounded-2xl">Log In</button>
-        <p id="login-error" class="hidden text-red-500 text-sm text-center mt-3">Wrong password</p>
+      <div id="login-form" class="card p-6 space-y-3">
+        <div>
+          <label class="block text-sm font-semibold text-gray-800 mb-1">Email</label>
+          <input id="admin-email" type="email" placeholder="admin@email.com" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-gray-800 mb-1">Password</label>
+          <input id="admin-password" type="password" placeholder="Password" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" onkeydown="if(event.key==='Enter')adminLogin()" />
+        </div>
+        <button onclick="adminLogin()" class="w-full bg-brand-purple text-white font-semibold py-3.5 rounded-2xl">Log In</button>
+        <button onclick="showForgotForm()" class="w-full text-sm text-brand-purple font-medium py-1">Forgot password?</button>
+        <p id="login-error" class="hidden text-red-500 text-sm text-center"></p>
+      </div>
+      <div id="forgot-form" class="card p-6 space-y-3 hidden">
+        <h3 class="font-bold text-gray-900">Reset password</h3>
+        <p class="text-xs text-gray-500">Enter your admin email. We will send a reset link.</p>
+        <input id="forgot-email" type="email" placeholder="admin@email.com" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
+        <button onclick="submitForgot()" class="w-full bg-brand-purple text-white font-semibold py-3 rounded-2xl">Send reset link</button>
+        <button onclick="showLoginForm()" class="w-full text-sm text-gray-500 py-1">Back to login</button>
+        <p id="forgot-msg" class="text-sm text-center text-gray-600"></p>
+      </div>
+      <div id="reset-form" class="card p-6 space-y-3 hidden">
+        <h3 class="font-bold text-gray-900">Set new password</h3>
+        <input id="reset-password" type="password" placeholder="New password (min 6)" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
+        <input id="reset-password2" type="password" placeholder="Confirm password" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
+        <button onclick="submitResetPassword()" class="w-full bg-brand-purple text-white font-semibold py-3 rounded-2xl">Save new password</button>
+        <button onclick="submitReset()" class="w-full bg-brand-purple text-white font-semibold py-3 rounded-2xl">Save new password</button>
+        <p id="reset-msg" class="text-sm text-center text-gray-600"></p>
       </div>
       <p class="text-center text-xs text-gray-400 mt-6">Staff: open the link sent to your email</p>
     </div>
@@ -144,26 +197,30 @@
 
     <!-- TOP TABS -->
     <div class="px-4 -mt-3 relative z-20">
-      <div class="card p-1.5 grid grid-cols-5 gap-0.5">
+      <div class="card p-1 grid grid-cols-6 gap-0.5">
         <button onclick="showPage('dashboard')" data-tab="dashboard" class="tab-btn flex flex-col items-center justify-center py-2 rounded-xl text-gray-500">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
-          <span class="text-[9px] font-medium mt-0.5">Home</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
+          <span class="text-[8px] font-medium mt-0.5">Home</span>
         </button>
         <button onclick="showPage('staff')" data-tab="staff" class="tab-btn flex flex-col items-center justify-center py-2 rounded-xl text-gray-500">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-          <span class="text-[9px] font-medium mt-0.5">Staff</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          <span class="text-[8px] font-medium mt-0.5">Staff</span>
         </button>
         <button onclick="showPage('create')" data-tab="create" class="tab-btn flex flex-col items-center justify-center py-2 rounded-xl text-gray-500">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          <span class="text-[9px] font-medium mt-0.5">Create</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          <span class="text-[8px] font-medium mt-0.5">Policy</span>
+        </button>
+        <button onclick="showPage('tasks')" data-tab="tasks" class="tab-btn flex flex-col items-center justify-center py-2 rounded-xl text-gray-500">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+          <span class="text-[8px] font-medium mt-0.5">Tasks</span>
         </button>
         <button onclick="showPage('live')" data-tab="live" class="tab-btn flex flex-col items-center justify-center py-2 rounded-xl text-gray-500">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-          <span class="text-[9px] font-medium mt-0.5">Live</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <span class="text-[8px] font-medium mt-0.5">Live</span>
         </button>
         <button onclick="showPage('library')" data-tab="library" class="tab-btn flex flex-col items-center justify-center py-2 rounded-xl text-gray-500">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-          <span class="text-[9px] font-medium mt-0.5">Library</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+          <span class="text-[8px] font-medium mt-0.5">Library</span>
         </button>
       </div>
     </div>
@@ -202,6 +259,12 @@
           <p id="dash-policy-pending-empty" class="text-sm text-gray-400 hidden">No pending policies</p>
         </div>
 
+                <div class="card p-4">
+          <h3 class="font-bold text-sm text-gray-900 mb-2">Change password</h3>
+          <input id="chg-current" type="password" placeholder="Current password" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm mb-2" />
+          <input id="chg-new" type="password" placeholder="New password" class="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm mb-2" />
+          <button onclick="changeAdminPassword()" class="w-full bg-gray-900 text-white text-sm font-semibold py-2.5 rounded-xl">Update password</button>
+        </div>
         <button onclick="adminLogout()" class="w-full text-sm text-gray-500 py-2">Log out</button>
       </div>
 
@@ -213,6 +276,16 @@
             <input id="emp-name" type="text" placeholder="Employee name" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
             <input id="emp-email" type="email" placeholder="Email" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
             <input id="emp-phone" type="tel" placeholder="Phone (optional)" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Role</label>
+              <select id="emp-role" onchange="toggleAdminPasswordField()" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm bg-white">
+                <option value="staff">Staff</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div id="emp-password-wrap" class="hidden">
+              <input id="emp-password" type="password" placeholder="Admin login password (min 6)" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
+            </div>
             <button onclick="addEmployee()" class="w-full bg-brand-green hover:bg-green-700 text-white font-semibold py-3 rounded-2xl">Add</button>
           </div>
         </div>
@@ -265,6 +338,30 @@
       <div id="page-live" class="page hidden fade">
         <div id="live-list" class="space-y-4"></div>
         <div id="live-empty" class="card py-14 text-center text-gray-400 text-sm hidden">No published policies yet.<br>Create one in the Create tab.</div>
+      </div>
+
+      <!-- TASKS -->
+      <div id="page-tasks" class="page hidden fade space-y-3">
+        <div class="card p-5">
+          <h2 class="text-lg font-bold text-gray-900 mb-3">Assign Task</h2>
+          <div class="space-y-3">
+            <input id="task-title" type="text" placeholder="Task title (e.g. Clean table 3)" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
+            <textarea id="task-desc" rows="3" placeholder="Details / instructions" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm resize-none"></textarea>
+            <input id="task-deadline" type="date" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-600" />
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Photo (optional)</label>
+              <input id="task-photo" type="file" accept="image/*" class="w-full text-sm" />
+              <img id="task-photo-preview" class="hidden mt-2 max-h-40 rounded-xl border" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Assign to</label>
+              <select id="task-assignee" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm bg-white"></select>
+            </div>
+            <button onclick="createTask()" class="w-full bg-brand-purple text-white font-semibold py-3.5 rounded-2xl">Create & Notify</button>
+          </div>
+        </div>
+        <div id="tasks-list" class="space-y-3"></div>
+        <div id="tasks-empty" class="card py-10 text-center text-sm text-gray-400 hidden">No tasks yet</div>
       </div>
 
       <!-- LIBRARY -->
@@ -363,6 +460,16 @@
         <input id="edit-emp-name" type="text" placeholder="Name" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
         <input id="edit-emp-email" type="email" placeholder="Email" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
         <input id="edit-emp-phone" type="tel" placeholder="Phone (optional)" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">Role</label>
+          <select id="edit-emp-role" onchange="toggleEditAdminPasswordField()" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm bg-white">
+            <option value="staff">Staff</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div id="edit-emp-password-wrap" class="hidden">
+          <input id="edit-emp-password" type="password" placeholder="Set/change admin password (optional)" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
+        </div>
         <button onclick="saveEditEmployee()" class="w-full bg-brand-purple text-white font-semibold py-3 rounded-2xl">Save Changes</button>
       </div>
     </div>
@@ -428,7 +535,8 @@
     let currentToken = null;
     let editingPolicyId = null;
     let detailPolicyId = null;
-    let cache = { employees: [], policies: [], assignments: [], folders: [] };
+    let cache = { employees: [], policies: [], assignments: [], folders: [], tasks: [] };
+    let currentAdminId = sessionStorage.getItem('lam_admin_id') || null;
 
     function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 9); }
     function fmt(iso) {
@@ -447,21 +555,129 @@
     }
 
     async function refreshCache() {
-      const [empRes, polRes, assRes, foldRes] = await Promise.all([
+      const [empRes, polRes, assRes, foldRes, taskRes] = await Promise.all([
         supabase.from('employees').select('*').order('created_at', { ascending: true }),
         supabase.from('policies').select('*').order('created_at', { ascending: false }),
         supabase.from('assignments').select('*'),
-        supabase.from('folders').select('*').order('name', { ascending: true })
+        supabase.from('folders').select('*').order('name', { ascending: true }),
+        supabase.from('tasks').select('*').order('created_at', { ascending: false })
       ]);
       if (empRes.error) throw new Error('employees: ' + empRes.error.message);
       if (polRes.error) throw new Error('policies: ' + polRes.error.message);
       if (assRes.error) throw new Error('assignments: ' + assRes.error.message);
-      // folders table may be empty; don't hard-fail if missing
       if (foldRes.error) console.warn('folders:', foldRes.error.message);
+      if (taskRes.error) console.warn('tasks:', taskRes.error.message);
       cache.employees = empRes.data || [];
       cache.policies = polRes.data || [];
       cache.assignments = assRes.data || [];
       cache.folders = foldRes.data || [];
+      cache.tasks = taskRes.data || [];
+    }
+
+    async function hashPassword(pw) {
+      const data = new TextEncoder().encode(pw);
+      const buf = await crypto.subtle.digest('SHA-256', data);
+      return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function toggleAdminPasswordField() {
+      const role = document.getElementById('emp-role').value;
+      document.getElementById('emp-password-wrap').classList.toggle('hidden', role !== 'admin');
+    }
+    function toggleEditAdminPasswordField() {
+      const role = document.getElementById('edit-emp-role').value;
+      document.getElementById('edit-emp-password-wrap').classList.toggle('hidden', role !== 'admin');
+    }
+
+    function showForgotForm() {
+      document.getElementById('login-form').classList.add('hidden');
+      document.getElementById('forgot-form').classList.remove('hidden');
+      document.getElementById('reset-form').classList.add('hidden');
+    }
+    function showLoginForm() {
+      document.getElementById('login-form').classList.remove('hidden');
+      document.getElementById('forgot-form').classList.add('hidden');
+      document.getElementById('reset-form').classList.add('hidden');
+    }
+    function showResetForm() {
+      document.getElementById('login-form').classList.add('hidden');
+      document.getElementById('forgot-form').classList.add('hidden');
+      document.getElementById('reset-form').classList.remove('hidden');
+    }
+
+    async function submitForgot() {
+      const email = document.getElementById('forgot-email').value.trim().toLowerCase();
+      const msg = document.getElementById('forgot-msg');
+      msg.textContent = '';
+      if (!email) { msg.textContent = 'Enter your email'; return; }
+      await refreshCache();
+      const admin = cache.employees.find(e => (e.email || '').toLowerCase() === email && e.role === 'admin');
+      if (!admin) {
+        msg.textContent = 'If that email is registered as admin, a link will be sent.';
+        return;
+      }
+      const token = uid() + uid();
+      const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+      await supabase.from('password_resets').insert({ id: uid(), employee_id: admin.id, token, expires_at: expires });
+      const link = location.origin + location.pathname + '#reset=' + token;
+      try {
+        await fetch('/api/send-emails', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            emails: [{
+              to: admin.email,
+              name: admin.name,
+              policyTitle: 'Password reset',
+              link
+            }]
+          })
+        });
+      } catch (e) { console.error(e); }
+      msg.textContent = 'If that email is registered as admin, a reset link was sent.';
+    }
+
+    async function submitResetPassword() {
+      const pw = document.getElementById('reset-password').value;
+      const pw2 = document.getElementById('reset-password2').value;
+      if (pw.length < 6) { toast('Password min 6 characters'); return; }
+      if (pw !== pw2) { toast('Passwords do not match'); return; }
+      const token = (location.hash.slice(1).startsWith('reset=') ? location.hash.slice(1).replace('reset=', '') : null);
+      if (!token) { toast('Invalid reset link'); return; }
+      const { data: rows } = await supabase.from('password_resets').select('*').eq('token', token).limit(1);
+      const row = rows && rows[0];
+      if (!row || new Date(row.expires_at) < new Date()) { toast('Reset link expired'); return; }
+      const hash = await hashPassword(pw);
+      await supabase.from('employees').update({ password_hash: hash }).eq('id', row.employee_id);
+      await supabase.from('password_resets').delete().eq('token', token);
+      toast('Password updated. Please log in.');
+      location.hash = '';
+      showLoginForm();
+    }
+
+    async function changeAdminPassword() {
+      const cur = document.getElementById('chg-current').value;
+      const neu = document.getElementById('chg-new').value;
+      if (!currentAdminId) { toast('Not logged in'); return; }
+      if (neu.length < 6) { toast('New password min 6 characters'); return; }
+      const admin = cache.employees.find(e => e.id === currentAdminId);
+      if (!admin) { toast('Admin not found'); return; }
+      const curHash = await hashPassword(cur);
+      if (admin.password_hash && admin.password_hash !== curHash) {
+        // also allow env fallback only if no hash set
+        toast('Current password incorrect');
+        return;
+      }
+      if (!admin.password_hash) {
+        // bootstrap: if only env password was used, allow change without match if empty hash
+      }
+      const newHash = await hashPassword(neu);
+      const { error } = await supabase.from('employees').update({ password_hash: newHash }).eq('id', currentAdminId);
+      if (error) { toast(error.message); return; }
+      document.getElementById('chg-current').value = '';
+      document.getElementById('chg-new').value = '';
+      await refreshCache();
+      toast('Password updated');
     }
 
     function getToken() {
@@ -475,37 +691,59 @@
     }
 
     async function adminLogin() {
+      const email = (document.getElementById('admin-email')?.value || '').trim().toLowerCase();
       const password = document.getElementById('admin-password').value;
       const errEl = document.getElementById('login-error');
       errEl.classList.add('hidden');
-      try {
-        const res = await fetch('/api/admin-login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password })
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          errEl.classList.remove('hidden');
-          return;
+      errEl.textContent = 'Wrong email or password';
+      if (!email || !password) {
+        errEl.textContent = 'Enter email and password';
+        errEl.classList.remove('hidden');
+        return;
+      }
+      await refreshCache();
+      const admins = cache.employees.filter(e => e.role === 'admin');
+      // First-time: no admin yet → allow env/default password then require creating admin in Staff
+      if (!admins.length) {
+        let ok = false;
+        try {
+          const res = await fetch('/api/admin-login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password })
+          });
+          ok = res.ok;
+        } catch (e) {
+          ok = (password === 'LAM2024!');
         }
+        if (!ok) { errEl.classList.remove('hidden'); return; }
         sessionStorage.setItem('lam_admin_token', 'ok');
+        sessionStorage.removeItem('lam_admin_id');
+        currentAdminId = null;
         document.getElementById('login-view').classList.add('hidden');
         document.getElementById('admin-view').classList.remove('hidden');
-        showPage('dashboard');
+        showPage('staff');
+        toast('Create yourself as Admin in Staff tab (role = Admin + password)');
         startLiveRefresh();
-      } catch (e) {
-        // Fallback: allow local default if API not deployed yet
-        if (password === 'LAM2024!') {
-          sessionStorage.setItem('lam_admin_token', 'ok');
-          document.getElementById('login-view').classList.add('hidden');
-          document.getElementById('admin-view').classList.remove('hidden');
-          showPage('dashboard');
-          startLiveRefresh();
-        } else {
-          errEl.classList.remove('hidden');
-        }
+        return;
       }
+      const admin = admins.find(e => (e.email || '').toLowerCase() === email);
+      if (!admin || !admin.password_hash) {
+        errEl.classList.remove('hidden');
+        return;
+      }
+      const hash = await hashPassword(password);
+      if (hash !== admin.password_hash) {
+        errEl.classList.remove('hidden');
+        return;
+      }
+      sessionStorage.setItem('lam_admin_token', 'ok');
+      sessionStorage.setItem('lam_admin_id', admin.id);
+      currentAdminId = admin.id;
+      document.getElementById('login-view').classList.add('hidden');
+      document.getElementById('admin-view').classList.remove('hidden');
+      showPage('dashboard');
+      startLiveRefresh();
     }
 
     function adminLogout() {
@@ -526,6 +764,7 @@
           if (tab === 'live') renderLive();
           if (tab === 'staff') renderStaff();
           if (tab === 'library') renderLibrary();
+          if (tab === 'tasks') renderTasks();
         } catch (e) { console.warn('live refresh', e); }
       }, 8000);
       // Supabase realtime if available
@@ -540,6 +779,191 @@
       } catch (e) { console.warn('realtime', e); }
     }
 
+
+    // ========== TASKS ==========
+    function fillTaskAssignees() {
+      const sel = document.getElementById('task-assignee');
+      if (!sel) return;
+      const staff = cache.employees.filter(e => e.role !== 'admin');
+      sel.innerHTML = staff.map(e => `<option value="${e.id}">${escapeHtml(e.name)}</option>`).join('') || '<option value="">No staff</option>';
+    }
+
+    document.getElementById('task-photo')?.addEventListener('change', function(e) {
+      const file = e.target.files && e.target.files[0];
+      const prev = document.getElementById('task-photo-preview');
+      if (!file) { prev.classList.add('hidden'); prev.src = ''; window._taskPhotoData = null; return; }
+      const reader = new FileReader();
+      reader.onload = function() {
+        // compress
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          let w = img.width, h = img.height;
+          const max = 1200;
+          if (w > max || h > max) {
+            if (w > h) { h = Math.round(h * max / w); w = max; }
+            else { w = Math.round(w * max / h); h = max; }
+          }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          window._taskPhotoData = canvas.toDataURL('image/jpeg', 0.72);
+          prev.src = window._taskPhotoData;
+          prev.classList.remove('hidden');
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    async function createTask() {
+      const title = document.getElementById('task-title').value.trim();
+      const description = document.getElementById('task-desc').value.trim();
+      const deadline = document.getElementById('task-deadline').value || null;
+      const assigneeId = document.getElementById('task-assignee').value;
+      if (!title) { toast('Enter task title'); return; }
+      if (!assigneeId) { toast('Select staff'); return; }
+      const emp = cache.employees.find(e => e.id === assigneeId);
+      if (!emp) { toast('Staff not found'); return; }
+      const token = uid() + uid();
+      const id = uid();
+      const { error } = await supabase.from('tasks').insert({
+        id, title, description, photo: window._taskPhotoData || null,
+        assignee_id: assigneeId, token, status: 'pending', deadline
+      });
+      if (error) { toast('Error: ' + error.message); return; }
+      const link = location.origin + location.pathname + '#task=' + token;
+      // Email
+      if (emp.email) {
+        try {
+          document.getElementById('sending-overlay').classList.remove('hidden');
+          document.getElementById('sending-text').textContent = 'Sending task email...';
+          await fetch('/api/send-emails', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              emails: [{
+                to: emp.email,
+                name: emp.name,
+                policyTitle: 'Task: ' + title,
+                link
+              }]
+            })
+          });
+          document.getElementById('sending-overlay').classList.add('hidden');
+        } catch (e) {
+          document.getElementById('sending-overlay').classList.add('hidden');
+        }
+      }
+      // Offer SMS if phone
+      if (emp.phone) {
+        const smsBody = encodeURIComponent('Hi ' + emp.name + ', new task from LAM NAIL SPA: ' + title + '\\n' + link);
+        const sms = 'sms:' + emp.phone.replace(/[^\d+]/g,'') + '?body=' + smsBody;
+        if (confirm('Email sent (if available). Open SMS to also text ' + emp.name + '?')) {
+          location.href = sms;
+        }
+      }
+      document.getElementById('task-title').value = '';
+      document.getElementById('task-desc').value = '';
+      document.getElementById('task-deadline').value = '';
+      document.getElementById('task-photo').value = '';
+      document.getElementById('task-photo-preview').classList.add('hidden');
+      window._taskPhotoData = null;
+      await refreshCache();
+      renderTasks();
+      toast('Task created');
+    }
+
+    function renderTasks() {
+      const list = document.getElementById('tasks-list');
+      const empty = document.getElementById('tasks-empty');
+      if (!list) return;
+      if (!cache.tasks.length) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+      list.innerHTML = cache.tasks.map(task => {
+        const emp = cache.employees.find(e => e.id === task.assignee_id);
+        const statusColor = task.status === 'accepted' ? 'text-green-600 bg-green-50' : task.status === 'denied' ? 'text-red-600 bg-red-50' : 'text-orange-600 bg-orange-50';
+        return `<div class="card p-4">
+          <div class="flex justify-between items-start gap-2">
+            <div>
+              <h3 class="font-semibold text-gray-900">${escapeHtml(task.title)}</h3>
+              <p class="text-xs text-gray-500 mt-0.5">${escapeHtml(emp ? emp.name : 'Staff')}${task.deadline ? ' · Due ' + task.deadline : ''}</p>
+            </div>
+            <span class="text-xs font-semibold px-2 py-1 rounded-full ${statusColor}">${task.status}</span>
+          </div>
+          ${task.description ? `<p class="text-sm text-gray-600 mt-2 line-clamp-2">${escapeHtml(task.description)}</p>` : ''}
+          ${task.photo ? `<img src="${task.photo}" class="mt-2 max-h-28 rounded-xl border" />` : ''}
+          ${task.status === 'denied' && task.deny_reason ? `<p class="text-xs text-red-600 mt-2">Reason: ${escapeHtml(task.deny_reason)}</p>` : ''}
+          <button onclick="deleteTask('${task.id}')" class="text-xs text-red-500 font-medium mt-2">Delete</button>
+        </div>`;
+      }).join('');
+    }
+
+    async function deleteTask(id) {
+      if (!confirm('Delete this task?')) return;
+      await supabase.from('tasks').delete().eq('id', id);
+      await refreshCache();
+      renderTasks();
+      toast('Task deleted');
+    }
+
+    let currentTaskToken = null;
+    async function handleTaskLink(token) {
+      await refreshCache();
+      const task = cache.tasks.find(x => x.token === token);
+      if (!task) {
+        document.body.innerHTML = '<div class="min-h-screen flex items-center justify-center p-6 text-center"><div><h1 class="font-bold text-xl">Invalid task link</h1></div></div>';
+        return;
+      }
+      currentTaskToken = token;
+      const emp = cache.employees.find(e => e.id === task.assignee_id);
+      document.getElementById('task-view').classList.remove('hidden');
+      document.getElementById('task-view-emp').textContent = emp ? 'For: ' + emp.name : '';
+      document.getElementById('task-view-title').textContent = task.title;
+      document.getElementById('task-view-desc').textContent = task.description || '';
+      document.getElementById('task-view-deadline').textContent = task.deadline ? 'Deadline: ' + task.deadline : '';
+      const photo = document.getElementById('task-view-photo');
+      if (task.photo) { photo.src = task.photo; photo.classList.remove('hidden'); }
+      else photo.classList.add('hidden');
+      if (task.status !== 'pending') {
+        document.getElementById('task-view-actions').classList.add('hidden');
+        document.getElementById('task-deny-box').classList.add('hidden');
+        document.getElementById('task-view-done').classList.remove('hidden');
+        document.getElementById('task-view-status').textContent = 'Status: ' + task.status + (task.deny_reason ? ' — ' + task.deny_reason : '');
+      }
+    }
+
+    function showTaskDeny() {
+      document.getElementById('task-view-actions').classList.add('hidden');
+      document.getElementById('task-deny-box').classList.remove('hidden');
+    }
+    function hideTaskDeny() {
+      document.getElementById('task-deny-box').classList.add('hidden');
+      document.getElementById('task-view-actions').classList.remove('hidden');
+    }
+
+    async function respondTask(status) {
+      const task = cache.tasks.find(x => x.token === currentTaskToken);
+      if (!task || task.status !== 'pending') return;
+      let deny_reason = null;
+      if (status === 'denied') {
+        deny_reason = document.getElementById('task-deny-reason').value.trim();
+        if (!deny_reason) { toast('Please enter a reason'); return; }
+      }
+      const { error } = await supabase.from('tasks').update({ status, deny_reason }).eq('id', task.id);
+      if (error) { toast(error.message); return; }
+      await refreshCache();
+      document.getElementById('task-view-actions').classList.add('hidden');
+      document.getElementById('task-deny-box').classList.add('hidden');
+      document.getElementById('task-view-done').classList.remove('hidden');
+      document.getElementById('task-view-status').textContent = 'Status: ' + status + (deny_reason ? ' — ' + deny_reason : '');
+      toast(status === 'accepted' ? 'Task accepted' : 'Task denied');
+    }
+
+
     async function init() {
       const loadingEl = document.getElementById('loading');
       try {
@@ -548,10 +972,21 @@
           new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout connecting to database')), 12000))
         ]);
         loadingEl.classList.add('hidden');
+        const hash = location.hash.slice(1);
+        if (hash.startsWith('reset=')) {
+          document.getElementById('login-view').classList.remove('hidden');
+          showResetForm();
+          return;
+        }
+        if (hash.startsWith('task=')) {
+          await handleTaskLink(hash.replace('task=', ''));
+          return;
+        }
         const token = getToken();
         if (token) {
           await handleEmployeeLink(token);
         } else if (isAdminLoggedIn()) {
+          currentAdminId = sessionStorage.getItem('lam_admin_id');
           document.getElementById('admin-view').classList.remove('hidden');
           showPage('dashboard');
           startLiveRefresh();
@@ -583,6 +1018,7 @@
       if (name === 'create') { if (!editingPolicyId) resetCreateForm(); renderAssignList(); fillFolderSelect(); }
       if (name === 'live') renderLive();
       if (name === 'library') renderLibrary();
+      if (name === 'tasks') { fillTaskAssignees(); renderTasks(); }
     }
 
     function renderLibrary() {
@@ -842,7 +1278,7 @@
         <div class="px-4 py-3.5 border-b border-gray-50 text-sm">
           <div class="flex justify-between items-start gap-2">
             <div class="min-w-0">
-              <div class="font-medium text-gray-900">${escapeHtml(e.name)}</div>
+              <div class="font-medium text-gray-900">${escapeHtml(e.name)} ${e.role==='admin'?'<span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-semibold">ADMIN</span>':''}</div>
               <div class="text-xs text-gray-500 truncate">${escapeHtml(e.email || '—')}</div>
               ${e.phone ? '<div class="text-xs text-gray-400">' + escapeHtml(e.phone) + '</div>' : ''}
             </div>
@@ -859,16 +1295,24 @@
       const name = document.getElementById('emp-name').value.trim();
       const email = document.getElementById('emp-email').value.trim();
       const phone = document.getElementById('emp-phone').value.trim() || null;
+      const role = document.getElementById('emp-role')?.value || 'staff';
+      const pw = document.getElementById('emp-password')?.value || '';
       if (!name) { toast('Please enter employee name'); return; }
       if (!email) { toast('Please enter email'); return; }
-      const { error } = await supabase.from('employees').insert({ id: uid(), name, email, phone });
+      if (role === 'admin' && pw.length < 6) { toast('Admin password min 6 characters'); return; }
+      const row = { id: uid(), name, email, phone, role };
+      if (role === 'admin') row.password_hash = await hashPassword(pw);
+      const { error } = await supabase.from('employees').insert(row);
       if (error) { toast('Error: ' + error.message); return; }
       document.getElementById('emp-name').value = '';
       document.getElementById('emp-email').value = '';
       document.getElementById('emp-phone').value = '';
+      if (document.getElementById('emp-password')) document.getElementById('emp-password').value = '';
+      if (document.getElementById('emp-role')) document.getElementById('emp-role').value = 'staff';
+      toggleAdminPasswordField();
       await refreshCache();
       renderStaff();
-      toast('Employee added');
+      toast(role === 'admin' ? 'Admin added' : 'Employee added');
     }
 
     async function deleteEmployee(id) {
@@ -887,6 +1331,11 @@
       document.getElementById('edit-emp-name').value = e.name || '';
       document.getElementById('edit-emp-email').value = e.email || '';
       document.getElementById('edit-emp-phone').value = e.phone || '';
+      if (document.getElementById('edit-emp-role')) {
+        document.getElementById('edit-emp-role').value = e.role || 'staff';
+        toggleEditAdminPasswordField();
+      }
+      if (document.getElementById('edit-emp-password')) document.getElementById('edit-emp-password').value = '';
       document.getElementById('modal-edit-employee').classList.remove('hidden');
     }
     function closeEditEmployee() { document.getElementById('modal-edit-employee').classList.add('hidden'); }
@@ -896,9 +1345,18 @@
       const name = document.getElementById('edit-emp-name').value.trim();
       const email = document.getElementById('edit-emp-email').value.trim();
       const phone = document.getElementById('edit-emp-phone').value.trim() || null;
+      const role = document.getElementById('edit-emp-role')?.value || 'staff';
+      const pw = document.getElementById('edit-emp-password')?.value || '';
       if (!name) { toast('Name is required'); return; }
       if (!email) { toast('Email is required'); return; }
-      const { error } = await supabase.from('employees').update({ name, email, phone }).eq('id', id);
+      const updates = { name, email, phone, role };
+      if (role === 'admin' && pw.length >= 6) {
+        updates.password_hash = await hashPassword(pw);
+      }
+      if (role === 'staff') {
+        updates.password_hash = null;
+      }
+      const { error } = await supabase.from('employees').update(updates).eq('id', id);
       if (error) { toast('Error: ' + error.message); return; }
       await refreshCache();
       closeEditEmployee();
@@ -912,7 +1370,13 @@
       if (!cache.employees.length) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
       empty.classList.add('hidden');
       const selected = selectedIds || [];
-      list.innerHTML = cache.employees.map(e => {
+      const staffOnly = cache.employees.filter(e => e.role !== 'admin');
+      if (!staffOnly.length) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+      list.innerHTML = staffOnly.map(e => {
         const isChecked = selected.length === 0 ? true : selected.includes(e.id);
         return `<label class="flex items-center gap-3 p-3 border border-gray-200 rounded-2xl cursor-pointer hover:bg-gray-50">
           <input type="checkbox" value="${e.id}" class="assign-check w-5 h-5 rounded text-brand-purple border-gray-300" ${isChecked ? 'checked' : ''} />
@@ -981,7 +1445,7 @@
           for (const empId of selected) {
             const a = assigns.find(x => x.employee_id === empId);
             const emp = cache.employees.find(e => e.id === empId);
-            if (!emp || !emp.email || !a) continue;
+            if (!emp || !emp.email || !a || emp.role === 'admin') continue;
             emailItems.push({
               to: emp.email,
               name: emp.name,
@@ -1028,7 +1492,7 @@
         const token = uid() + uid();
         await supabase.from('assignments').insert({ id: uid(), policy_id: policyId, employee_id: empId, token, status: 'pending' });
         const emp = cache.employees.find(e => e.id === empId);
-        if (emp && emp.email) {
+        if (emp && emp.email && emp.role !== 'admin') {
           emailItems.push({
             to: emp.email,
             name: emp.name,
