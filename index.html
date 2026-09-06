@@ -200,6 +200,12 @@
             <input id="policy-title" type="text" placeholder="Policy Title" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
             <textarea id="policy-content" rows="5" placeholder="Instructions" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm resize-none"></textarea>
             <input id="policy-deadline" type="date" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-600" />
+            <div>
+              <label class="block text-xs font-medium text-gray-500 mb-1">Folder (optional)</label>
+              <select id="policy-folder" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-700 bg-white">
+                <option value="">No folder</option>
+              </select>
+            </div>
             <div class="pt-2">
               <div class="text-sm font-semibold text-gray-800 mb-2">Assign Employees</div>
               <div class="flex gap-2 mb-3">
@@ -230,7 +236,11 @@
       <div id="page-library" class="page hidden fade">
         <div class="card p-4 mb-3">
           <h2 class="font-bold text-gray-900">Policy Library</h2>
-          <p class="text-xs text-gray-500 mt-1">All policies available to read anytime</p>
+          <p class="text-xs text-gray-500 mt-1">Organize policies into folders</p>
+          <div class="flex gap-2 mt-3">
+            <input id="new-folder-name" type="text" placeholder="New folder name" class="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm" />
+            <button onclick="createFolder()" class="bg-brand-purple text-white text-sm font-semibold px-4 py-2 rounded-xl">Add</button>
+          </div>
         </div>
         <div id="library-list" class="space-y-3"></div>
         <div id="library-empty" class="card py-14 text-center text-gray-400 text-sm hidden">No policies yet.</div>
@@ -368,7 +378,7 @@
     let currentToken = null;
     let editingPolicyId = null;
     let detailPolicyId = null;
-    let cache = { employees: [], policies: [], assignments: [] };
+    let cache = { employees: [], policies: [], assignments: [], folders: [] };
 
     function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 9); }
     function fmt(iso) {
@@ -387,17 +397,21 @@
     }
 
     async function refreshCache() {
-      const [empRes, polRes, assRes] = await Promise.all([
+      const [empRes, polRes, assRes, foldRes] = await Promise.all([
         supabase.from('employees').select('*').order('created_at', { ascending: true }),
         supabase.from('policies').select('*').order('created_at', { ascending: false }),
-        supabase.from('assignments').select('*')
+        supabase.from('assignments').select('*'),
+        supabase.from('folders').select('*').order('name', { ascending: true })
       ]);
       if (empRes.error) throw new Error('employees: ' + empRes.error.message);
       if (polRes.error) throw new Error('policies: ' + polRes.error.message);
       if (assRes.error) throw new Error('assignments: ' + assRes.error.message);
+      // folders table may be empty; don't hard-fail if missing
+      if (foldRes.error) console.warn('folders:', foldRes.error.message);
       cache.employees = empRes.data || [];
       cache.policies = polRes.data || [];
       cache.assignments = assRes.data || [];
+      cache.folders = foldRes.data || [];
     }
 
     function getToken() {
@@ -443,7 +457,7 @@
       if (active) { active.classList.add('tab-active', 'text-brand-purple'); active.classList.remove('text-gray-500'); }
       if (name === 'dashboard') renderDashboard();
       if (name === 'staff') renderStaff();
-      if (name === 'create') { if (!editingPolicyId) resetCreateForm(); renderAssignList(); }
+      if (name === 'create') { if (!editingPolicyId) resetCreateForm(); renderAssignList(); fillFolderSelect(); }
       if (name === 'live') renderLive();
       if (name === 'library') renderLibrary();
     }
@@ -451,16 +465,63 @@
     function renderLibrary() {
       const list = document.getElementById('library-list');
       const empty = document.getElementById('library-empty');
-      if (!cache.policies.length) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
+      if (!cache.policies.length && !cache.folders.length) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
       empty.classList.add('hidden');
-      list.innerHTML = cache.policies.map(p => `
-        <div class="card p-4" onclick="openLibraryPolicy('${p.id}')">
-          <h3 class="font-semibold text-gray-900">${escapeHtml(p.title)}</h3>
-          ${p.deadline ? '<p class="text-xs text-gray-500 mt-1">Deadline: ' + p.deadline + '</p>' : ''}
-          <p class="text-sm text-gray-600 mt-2 line-clamp-2">${escapeHtml((p.content||'').substring(0,120))}${(p.content||'').length>120?'…':''}</p>
-          <div class="text-xs text-brand-purple font-medium mt-2">Read full policy →</div>
-        </div>
-      `).join('');
+
+      const folders = cache.folders.slice();
+      const uncategorized = cache.policies.filter(p => !p.folder_id);
+      let html = '';
+
+      folders.forEach(f => {
+        const pols = cache.policies.filter(p => p.folder_id === f.id);
+        html += `
+          <div class="card overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
+              <div class="flex items-center gap-2">
+                <span>📁</span>
+                <span class="font-semibold text-sm text-gray-900">${escapeHtml(f.name)}</span>
+                <span class="text-xs text-gray-400">(${pols.length})</span>
+              </div>
+              <button onclick="event.stopPropagation(); deleteFolder('${f.id}')" class="text-xs text-red-500 font-medium">Delete</button>
+            </div>
+            <div class="divide-y divide-gray-50">
+              ${pols.length ? pols.map(p => libraryPolicyRow(p)).join('') : '<p class="px-4 py-3 text-xs text-gray-400">Empty folder</p>'}
+            </div>
+          </div>`;
+      });
+
+      if (uncategorized.length) {
+        html += `
+          <div class="card overflow-hidden">
+            <div class="px-4 py-3 bg-gray-50 border-b border-gray-100">
+              <span class="font-semibold text-sm text-gray-700">Uncategorized</span>
+              <span class="text-xs text-gray-400 ml-1">(${uncategorized.length})</span>
+            </div>
+            <div class="divide-y divide-gray-50">
+              ${uncategorized.map(p => libraryPolicyRow(p)).join('')}
+            </div>
+          </div>`;
+      }
+
+      list.innerHTML = html || '';
+    }
+
+    function libraryPolicyRow(p) {
+      return `
+        <div class="px-4 py-3 flex items-start gap-3">
+          <div class="flex-1 min-w-0" onclick="openLibraryPolicy('${p.id}')">
+            <h3 class="font-medium text-sm text-gray-900">${escapeHtml(p.title)}</h3>
+            <p class="text-xs text-gray-500 mt-0.5 line-clamp-1">${escapeHtml((p.content||'').substring(0,80))}</p>
+          </div>
+          <select onchange="movePolicyToFolder('${p.id}', this.value)" onclick="event.stopPropagation()" class="text-xs border border-gray-200 rounded-lg px-2 py-1.5 max-w-[110px] bg-white">
+            <option value="">No folder</option>
+            ${cache.folders.map(f => `<option value="${f.id}" ${p.folder_id===f.id?'selected':''}>${escapeHtml(f.name)}</option>`).join('')}
+          </select>
+        </div>`;
     }
 
     function openLibraryPolicy(id) {
@@ -472,6 +533,35 @@
       document.getElementById('modal-library-policy').classList.remove('hidden');
     }
     function closeLibraryPolicy() { document.getElementById('modal-library-policy').classList.add('hidden'); }
+
+    async function createFolder() {
+      const name = document.getElementById('new-folder-name').value.trim();
+      if (!name) { toast('Enter a folder name'); return; }
+      const { error } = await supabase.from('folders').insert({ id: uid(), name });
+      if (error) { toast('Error: ' + error.message); return; }
+      document.getElementById('new-folder-name').value = '';
+      await refreshCache();
+      renderLibrary();
+      toast('Folder created');
+    }
+
+    async function deleteFolder(id) {
+      if (!confirm('Delete this folder? Policies will become Uncategorized.')) return;
+      await supabase.from('policies').update({ folder_id: null }).eq('folder_id', id);
+      const { error } = await supabase.from('folders').delete().eq('id', id);
+      if (error) { toast('Error: ' + error.message); return; }
+      await refreshCache();
+      renderLibrary();
+      toast('Folder deleted');
+    }
+
+    async function movePolicyToFolder(policyId, folderId) {
+      const { error } = await supabase.from('policies').update({ folder_id: folderId || null }).eq('id', policyId);
+      if (error) { toast('Error: ' + error.message); return; }
+      await refreshCache();
+      renderLibrary();
+      toast('Moved');
+    }
 
     function renderDashboard() {
       let confirmed = 0, pending = 0;
@@ -565,6 +655,13 @@
       document.querySelectorAll('.assign-check').forEach(c => c.checked = checked);
     }
 
+    function fillFolderSelect(selectedId) {
+      const sel = document.getElementById('policy-folder');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">No folder</option>' +
+        cache.folders.map(f => `<option value="${f.id}" ${selectedId===f.id?'selected':''}>${escapeHtml(f.name)}</option>`).join('');
+    }
+
     function resetCreateForm() {
       editingPolicyId = null;
       document.getElementById('create-heading').textContent = 'Create Policy';
@@ -574,6 +671,7 @@
       document.getElementById('policy-title').value = '';
       document.getElementById('policy-content').value = '';
       document.getElementById('policy-deadline').value = '';
+      fillFolderSelect('');
     }
 
     function cancelEdit() {
@@ -586,12 +684,13 @@
       const title = document.getElementById('policy-title').value.trim();
       const content = document.getElementById('policy-content').value.trim();
       const deadline = document.getElementById('policy-deadline').value || null;
+      const folderId = document.getElementById('policy-folder').value || null;
       if (!title) { toast('Please enter a title'); return; }
       if (!content) { toast('Please enter instructions'); return; }
       const selected = [...document.querySelectorAll('.assign-check:checked')].map(c => c.value);
 
       if (editingPolicyId) {
-        const { error } = await supabase.from('policies').update({ title, content, deadline }).eq('id', editingPolicyId);
+        const { error } = await supabase.from('policies').update({ title, content, deadline, folder_id: folderId }).eq('id', editingPolicyId);
         if (error) { toast('Error: ' + error.message); return; }
         const existing = cache.assignments.filter(a => a.policy_id === editingPolicyId);
         for (const empId of selected) {
@@ -651,7 +750,7 @@
 
       // Create new
       const policyId = uid();
-      const { error: pErr } = await supabase.from('policies').insert({ id: policyId, title, content, deadline });
+      const { error: pErr } = await supabase.from('policies').insert({ id: policyId, title, content, deadline, folder_id: folderId });
       if (pErr) { toast('Error: ' + pErr.message); return; }
 
       const emailItems = [];
@@ -789,6 +888,7 @@
       const selectedIds = cache.assignments.filter(a => a.policy_id === policyId).map(a => a.employee_id);
       showPage('create');
       renderAssignList(selectedIds);
+      fillFolderSelect(p.folder_id || '');
     }
 
     async function deletePolicy() { if (detailPolicyId) await deletePolicyById(detailPolicyId); }
@@ -927,20 +1027,46 @@
           <span class="text-xs text-gray-500">${fmt(item.assignment.confirmed_at)}</span></div>
           ${item.assignment.signature?`<img src="${item.assignment.signature}" class="max-h-20 border rounded-xl bg-white" />`:'<p class="text-xs text-gray-400">No signature</p>'}</div>`).join('');
 
-      // Library: all policies for reading
+      // Library: ONLY policies assigned to this staff member
       const libEl = document.getElementById('emp-library');
       if (libEl) {
-        if (!cache.policies.length) {
-          libEl.innerHTML = '<div class="card py-12 text-center text-gray-400 text-sm">No policies in library</div>';
+        const myPolicyIds = new Set(
+          cache.assignments.filter(a => a.employee_id === currentEmployeeId).map(a => a.policy_id)
+        );
+        const myPolicies = cache.policies.filter(p => myPolicyIds.has(p.id));
+        if (!myPolicies.length) {
+          libEl.innerHTML = '<div class="card py-12 text-center text-gray-400 text-sm">No policies assigned to you yet</div>';
         } else {
-          libEl.innerHTML = cache.policies.map(p => `
-            <div class="card p-4" onclick="openLibraryPolicy('${p.id}')">
-              <h3 class="font-semibold text-gray-900">${escapeHtml(p.title)}</h3>
-              ${p.deadline ? '<p class="text-xs text-gray-500 mt-1">Deadline: ' + escapeHtml(p.deadline) + '</p>' : ''}
-              <p class="text-sm text-gray-600 mt-2 line-clamp-2">${escapeHtml((p.content||'').substring(0,100))}…</p>
-              <div class="text-xs text-brand-purple font-medium mt-2">Read full policy →</div>
-            </div>
-          `).join('');
+          // Group by folder
+          let html = '';
+          const usedFolders = cache.folders.filter(f => myPolicies.some(p => p.folder_id === f.id));
+          usedFolders.forEach(f => {
+            const pols = myPolicies.filter(p => p.folder_id === f.id);
+            html += `<div class="card overflow-hidden mb-3">
+              <div class="px-4 py-2.5 bg-gray-50 border-b border-gray-100 text-sm font-semibold">📁 ${escapeHtml(f.name)}</div>
+              <div class="divide-y divide-gray-50">
+                ${pols.map(p => `
+                  <div class="p-4" onclick="openLibraryPolicy('${p.id}')">
+                    <h3 class="font-semibold text-gray-900 text-sm">${escapeHtml(p.title)}</h3>
+                    <p class="text-xs text-gray-500 mt-1 line-clamp-2">${escapeHtml((p.content||'').substring(0,90))}…</p>
+                  </div>`).join('')}
+              </div>
+            </div>`;
+          });
+          const uncat = myPolicies.filter(p => !p.folder_id);
+          if (uncat.length) {
+            html += `<div class="card overflow-hidden">
+              ${usedFolders.length ? '<div class="px-4 py-2.5 bg-gray-50 border-b border-gray-100 text-sm font-semibold text-gray-600">Other</div>' : ''}
+              <div class="divide-y divide-gray-50">
+                ${uncat.map(p => `
+                  <div class="p-4" onclick="openLibraryPolicy('${p.id}')">
+                    <h3 class="font-semibold text-gray-900 text-sm">${escapeHtml(p.title)}</h3>
+                    <p class="text-xs text-gray-500 mt-1 line-clamp-2">${escapeHtml((p.content||'').substring(0,90))}…</p>
+                  </div>`).join('')}
+              </div>
+            </div>`;
+          }
+          libEl.innerHTML = html;
         }
       }
     }
