@@ -198,9 +198,12 @@
               <div id="assign-list" class="space-y-2 max-h-52 overflow-y-auto"></div>
               <p id="assign-empty" class="text-sm text-gray-400 hidden">Add employees first in the Staff tab.</p>
             </div>
-            <div class="flex gap-2 mt-2">
-              <button id="btn-cancel-edit" onclick="cancelEdit()" class="hidden flex-1 border border-gray-300 text-gray-700 font-semibold py-3.5 rounded-2xl">Cancel</button>
-              <button id="btn-publish" onclick="publishPolicy()" class="flex-1 bg-brand-purple hover:bg-brand-purpleDark text-white font-semibold py-3.5 rounded-2xl">Publish Policy</button>
+            <div class="flex flex-col gap-2 mt-2">
+              <button id="btn-publish" onclick="publishPolicy(true)" class="w-full bg-brand-purple hover:bg-brand-purpleDark text-white font-semibold py-3.5 rounded-2xl">Publish & Send Emails</button>
+              <div class="flex gap-2">
+                <button id="btn-cancel-edit" onclick="cancelEdit()" class="hidden flex-1 border border-gray-300 text-gray-700 font-semibold py-3 rounded-2xl">Cancel</button>
+                <button id="btn-save-only" onclick="publishPolicy(false)" class="hidden flex-1 border border-gray-300 text-gray-800 font-semibold py-3 rounded-2xl">Save Changes</button>
+              </div>
             </div>
           </div>
         </div>
@@ -540,8 +543,9 @@
     function resetCreateForm() {
       editingPolicyId = null;
       document.getElementById('create-heading').textContent = 'Create Policy';
-      document.getElementById('btn-publish').textContent = 'Publish Policy';
+      document.getElementById('btn-publish').textContent = 'Publish & Send Emails';
       document.getElementById('btn-cancel-edit').classList.add('hidden');
+      document.getElementById('btn-save-only').classList.add('hidden');
       document.getElementById('policy-title').value = '';
       document.getElementById('policy-content').value = '';
       document.getElementById('policy-deadline').value = '';
@@ -553,7 +557,7 @@
       showPage('live');
     }
 
-    async function publishPolicy() {
+    async function publishPolicy(sendEmails) {
       const title = document.getElementById('policy-title').value.trim();
       const content = document.getElementById('policy-content').value.trim();
       const deadline = document.getElementById('policy-deadline').value || null;
@@ -576,7 +580,45 @@
           }
         }
         await refreshCache();
-        toast('Policy updated!');
+
+        if (sendEmails && selected.length) {
+          const emailItems = [];
+          const assigns = cache.assignments.filter(a => a.policy_id === editingPolicyId);
+          for (const empId of selected) {
+            const a = assigns.find(x => x.employee_id === empId);
+            const emp = cache.employees.find(e => e.id === empId);
+            if (!emp || !emp.email || !a) continue;
+            emailItems.push({
+              to: emp.email,
+              name: emp.name,
+              policyTitle: title,
+              link: location.origin + location.pathname + '#confirm=' + a.token
+            });
+          }
+          if (emailItems.length) {
+            document.getElementById('sending-overlay').classList.remove('hidden');
+            document.getElementById('sending-text').textContent = 'Sending ' + emailItems.length + ' email(s)...';
+            try {
+              const res = await fetch('/api/send-emails', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ emails: emailItems })
+              });
+              const data = await res.json();
+              document.getElementById('sending-overlay').classList.add('hidden');
+              if (res.ok) toast('Saved & emails sent!');
+              else toast('Saved, but email failed: ' + (data.error || 'unknown'));
+            } catch (err) {
+              document.getElementById('sending-overlay').classList.add('hidden');
+              toast('Saved, but email sending failed');
+              console.error(err);
+            }
+          } else {
+            toast('Policy updated (no emails to send)');
+          }
+        } else {
+          toast('Policy updated!');
+        }
         resetCreateForm();
         showPage('live');
         return;
@@ -607,7 +649,7 @@
       document.getElementById('policy-content').value = '';
       document.getElementById('policy-deadline').value = '';
 
-      if (emailItems.length) {
+      if (sendEmails !== false && emailItems.length) {
         document.getElementById('sending-overlay').classList.remove('hidden');
         document.getElementById('sending-text').textContent = 'Sending ' + emailItems.length + ' email(s)...';
         try {
@@ -629,7 +671,7 @@
           console.error(err);
         }
       } else {
-        toast(selected.length ? 'Policy published (no emails found)' : 'Policy saved (no one assigned)');
+        toast(selected.length ? (sendEmails === false ? 'Policy saved' : 'Policy published (no emails found)') : 'Policy saved (no one assigned)');
       }
       showPage('live');
     }
@@ -713,8 +755,9 @@
       editingPolicyId = policyId;
       closeDetail();
       document.getElementById('create-heading').textContent = 'Edit Policy';
-      document.getElementById('btn-publish').textContent = 'Save Changes';
+      document.getElementById('btn-publish').textContent = 'Publish & Send Emails';
       document.getElementById('btn-cancel-edit').classList.remove('hidden');
+      document.getElementById('btn-save-only').classList.remove('hidden');
       document.getElementById('policy-title').value = p.title;
       document.getElementById('policy-content').value = p.content;
       document.getElementById('policy-deadline').value = p.deadline || '';

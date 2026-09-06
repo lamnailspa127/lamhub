@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   }
 
   const RESEND_API_KEY = process.env.RESEND_API_KEY;
-  const FROM_EMAIL = 'LAM Nail Spa <lamhub@lamnailspa.ca>';
+  const FROM_EMAIL = 'LAM NAIL SPA <lamhub@lamnailspa.ca>';
 
   if (!RESEND_API_KEY) {
     return res.status(500).json({
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
       const html = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px;">
           <div style="text-align: center; margin-bottom: 24px;">
-            <h1 style="color: #111; font-size: 22px; margin: 0;">LAM Nail Spa</h1>
+            <h1 style="color: #111; font-size: 22px; margin: 0;">LAM NAIL SPA</h1>
             <p style="color: #666; font-size: 14px; margin: 4px 0 0;">Staff Policy & Training Hub</p>
           </div>
           <p style="font-size: 16px; color: #333;">Hi ${name || 'there'},</p>
@@ -54,7 +54,7 @@ export default async function handler(req, res) {
           </p>
           <hr style="border: none; border-top: 1px solid #eee; margin: 28px 0;">
           <p style="font-size: 12px; color: #999; text-align: center;">
-            LAM Nail Spa • Est. 2023<br>
+            LAM NAIL SPA • Est. 2023<br>
             This email was sent automatically. Please do not reply.
           </p>
         </div>
@@ -69,7 +69,7 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           from: FROM_EMAIL,
           to: [to],
-          subject: `LAM Nail Spa – Please confirm: ${policyTitle}`,
+          subject: `LAM NAIL SPA – Please confirm: ${policyTitle}`,
           html
         })
       });
