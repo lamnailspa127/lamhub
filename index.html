@@ -53,15 +53,17 @@
     </div>
     <div class="px-4 -mt-3 relative z-10">
       <div class="card p-1.5 flex gap-1">
-        <button onclick="showEmpTab('pending')" data-emptab="pending" class="emp-tab flex-1 py-2.5 rounded-xl text-sm font-semibold bg-brand-purple text-white">Pending</button>
-        <button onclick="showEmpTab('confirmed')" data-emptab="confirmed" class="emp-tab flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-600">Confirmed</button>
-        <button onclick="showEmpTab('history')" data-emptab="history" class="emp-tab flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-600">History</button>
+        <button onclick="showEmpTab('pending')" data-emptab="pending" class="emp-tab flex-1 py-2 rounded-xl text-xs font-semibold bg-brand-purple text-white">Pending</button>
+        <button onclick="showEmpTab('confirmed')" data-emptab="confirmed" class="emp-tab flex-1 py-2 rounded-xl text-xs font-semibold text-gray-600">Confirmed</button>
+        <button onclick="showEmpTab('history')" data-emptab="history" class="emp-tab flex-1 py-2 rounded-xl text-xs font-semibold text-gray-600">History</button>
+        <button onclick="showEmpTab('library')" data-emptab="library" class="emp-tab flex-1 py-2 rounded-xl text-xs font-semibold text-gray-600">Library</button>
       </div>
     </div>
     <div class="px-4 mt-4 space-y-3 pb-8">
       <div id="emp-pending" class="emp-panel space-y-3"></div>
       <div id="emp-confirmed" class="emp-panel hidden space-y-3"></div>
       <div id="emp-history" class="emp-panel hidden space-y-3"></div>
+      <div id="emp-library" class="emp-panel hidden space-y-3"></div>
     </div>
   </div>
 
@@ -113,22 +115,26 @@
 
     <!-- TOP TABS -->
     <div class="px-4 -mt-3 relative z-20">
-      <div class="card p-1.5 grid grid-cols-4 gap-1">
-        <button onclick="showPage('dashboard')" data-tab="dashboard" class="tab-btn flex flex-col items-center justify-center py-2.5 rounded-xl text-gray-500">
+      <div class="card p-1.5 grid grid-cols-5 gap-0.5">
+        <button onclick="showPage('dashboard')" data-tab="dashboard" class="tab-btn flex flex-col items-center justify-center py-2 rounded-xl text-gray-500">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
-          <span class="text-[10px] font-medium mt-0.5">Dashboard</span>
+          <span class="text-[9px] font-medium mt-0.5">Home</span>
         </button>
-        <button onclick="showPage('staff')" data-tab="staff" class="tab-btn flex flex-col items-center justify-center py-2.5 rounded-xl text-gray-500">
+        <button onclick="showPage('staff')" data-tab="staff" class="tab-btn flex flex-col items-center justify-center py-2 rounded-xl text-gray-500">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
-          <span class="text-[10px] font-medium mt-0.5">Staff</span>
+          <span class="text-[9px] font-medium mt-0.5">Staff</span>
         </button>
-        <button onclick="showPage('create')" data-tab="create" class="tab-btn flex flex-col items-center justify-center py-2.5 rounded-xl text-gray-500">
+        <button onclick="showPage('create')" data-tab="create" class="tab-btn flex flex-col items-center justify-center py-2 rounded-xl text-gray-500">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-          <span class="text-[10px] font-medium mt-0.5">Create</span>
+          <span class="text-[9px] font-medium mt-0.5">Create</span>
         </button>
-        <button onclick="showPage('live')" data-tab="live" class="tab-btn flex flex-col items-center justify-center py-2.5 rounded-xl text-gray-500">
+        <button onclick="showPage('live')" data-tab="live" class="tab-btn flex flex-col items-center justify-center py-2 rounded-xl text-gray-500">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-          <span class="text-[10px] font-medium mt-0.5">Live</span>
+          <span class="text-[9px] font-medium mt-0.5">Live</span>
+        </button>
+        <button onclick="showPage('library')" data-tab="library" class="tab-btn flex flex-col items-center justify-center py-2 rounded-xl text-gray-500">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+          <span class="text-[9px] font-medium mt-0.5">Library</span>
         </button>
       </div>
     </div>
@@ -167,8 +173,8 @@
         <div class="card mt-4 overflow-hidden">
           <div class="grid grid-cols-12 gap-2 px-4 py-3 text-xs font-semibold text-gray-500 border-b border-gray-100">
             <div class="col-span-4">Name</div>
-            <div class="col-span-5">Email</div>
-            <div class="col-span-3 text-right">Status</div>
+            <div class="col-span-4">Email</div>
+            <div class="col-span-4 text-right">Actions</div>
           </div>
           <div id="staff-list"></div>
           <div id="staff-empty" class="hidden py-10 text-center text-sm text-gray-400">No employees yet</div>
@@ -205,6 +211,16 @@
         <div id="live-list" class="space-y-4"></div>
         <div id="live-empty" class="card py-14 text-center text-gray-400 text-sm hidden">No published policies yet.<br>Create one in the Create tab.</div>
       </div>
+
+      <!-- LIBRARY -->
+      <div id="page-library" class="page hidden fade">
+        <div class="card p-4 mb-3">
+          <h2 class="font-bold text-gray-900">Policy Library</h2>
+          <p class="text-xs text-gray-500 mt-1">All policies available to read anytime</p>
+        </div>
+        <div id="library-list" class="space-y-3"></div>
+        <div id="library-empty" class="card py-14 text-center text-gray-400 text-sm hidden">No policies yet.</div>
+      </div>
     </div>
   </div>
 
@@ -222,9 +238,12 @@
           <h4 class="font-semibold mb-3">Confirmation Status</h4>
           <div id="detail-status" class="space-y-2"></div>
         </div>
-        <div class="flex gap-3 pt-2 border-t border-gray-100">
-          <button onclick="startEditPolicy()" class="flex-1 border border-gray-300 text-gray-800 font-semibold py-3 rounded-2xl text-sm">Edit Policy</button>
-          <button onclick="deletePolicy()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-2xl text-sm">Delete Policy</button>
+        <div class="flex flex-col gap-2 pt-2 border-t border-gray-100">
+          <button onclick="republishPolicy()" class="w-full bg-brand-purple text-white font-semibold py-3 rounded-2xl text-sm">Publish / Send Again</button>
+          <div class="flex gap-3">
+            <button onclick="startEditPolicy()" class="flex-1 border border-gray-300 text-gray-800 font-semibold py-3 rounded-2xl text-sm">Edit Policy</button>
+            <button onclick="deletePolicy()" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-3 rounded-2xl text-sm">Delete Policy</button>
+          </div>
         </div>
       </div>
     </div>
@@ -269,6 +288,36 @@
           </label>
           <button onclick="submitEmpConfirmation()" class="w-full bg-brand-purple text-white font-semibold py-3.5 rounded-2xl">Confirm & Sign</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Employee Modal -->
+  <div id="modal-edit-employee" class="hidden fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-lg">Edit Employee</h3>
+        <button onclick="closeEditEmployee()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xl text-gray-500">&times;</button>
+      </div>
+      <input type="hidden" id="edit-emp-id" />
+      <div class="space-y-3">
+        <input id="edit-emp-name" type="text" placeholder="Name" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
+        <input id="edit-emp-email" type="email" placeholder="Email" class="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm" />
+        <button onclick="saveEditEmployee()" class="w-full bg-brand-purple text-white font-semibold py-3 rounded-2xl">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Library Policy Read Modal -->
+  <div id="modal-library-policy" class="hidden fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center">
+    <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto">
+      <div class="sticky top-0 bg-white px-5 pt-5 pb-3 border-b border-gray-100 flex justify-between items-center">
+        <h3 class="font-bold text-lg" id="lib-pol-title"></h3>
+        <button onclick="closeLibraryPolicy()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xl text-gray-500">&times;</button>
+      </div>
+      <div class="p-5 space-y-3">
+        <div class="text-xs text-gray-500" id="lib-pol-meta"></div>
+        <div class="bg-gray-50 rounded-2xl p-4 text-sm whitespace-pre-wrap leading-relaxed" id="lib-pol-content"></div>
       </div>
     </div>
   </div>
@@ -368,7 +417,33 @@
       if (name === 'staff') renderStaff();
       if (name === 'create') { if (!editingPolicyId) resetCreateForm(); renderAssignList(); }
       if (name === 'live') renderLive();
+      if (name === 'library') renderLibrary();
     }
+
+    function renderLibrary() {
+      const list = document.getElementById('library-list');
+      const empty = document.getElementById('library-empty');
+      if (!cache.policies.length) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
+      empty.classList.add('hidden');
+      list.innerHTML = cache.policies.map(p => `
+        <div class="card p-4" onclick="openLibraryPolicy('${p.id}')">
+          <h3 class="font-semibold text-gray-900">${escapeHtml(p.title)}</h3>
+          ${p.deadline ? '<p class="text-xs text-gray-500 mt-1">Deadline: ' + p.deadline + '</p>' : ''}
+          <p class="text-sm text-gray-600 mt-2 line-clamp-2">${escapeHtml((p.content||'').substring(0,120))}${(p.content||'').length>120?'…':''}</p>
+          <div class="text-xs text-brand-purple font-medium mt-2">Read full policy →</div>
+        </div>
+      `).join('');
+    }
+
+    function openLibraryPolicy(id) {
+      const p = cache.policies.find(x => x.id === id);
+      if (!p) return;
+      document.getElementById('lib-pol-title').textContent = p.title;
+      document.getElementById('lib-pol-meta').textContent = (p.deadline ? 'Deadline: ' + p.deadline + '  •  ' : '') + 'Created ' + fmt(p.created_at);
+      document.getElementById('lib-pol-content').textContent = p.content;
+      document.getElementById('modal-library-policy').classList.remove('hidden');
+    }
+    function closeLibraryPolicy() { document.getElementById('modal-library-policy').classList.add('hidden'); }
 
     function renderDashboard() {
       let confirmed = 0, pending = 0;
@@ -387,9 +462,9 @@
       list.innerHTML = cache.employees.map(e => `
         <div class="grid grid-cols-12 gap-2 px-4 py-3.5 items-center border-b border-gray-50 text-sm">
           <div class="col-span-4 font-medium text-gray-900 truncate">${escapeHtml(e.name)}</div>
-          <div class="col-span-5 text-gray-500 text-xs truncate">${escapeHtml(e.email || '—')}</div>
-          <div class="col-span-3 text-right">
-            <span class="text-green-600 text-xs font-medium mr-1">Active</span>
+          <div class="col-span-4 text-gray-500 text-xs truncate">${escapeHtml(e.email || '—')}</div>
+          <div class="col-span-4 text-right">
+            <button onclick="openEditEmployee('${e.id}')" class="text-brand-purple text-xs font-medium mr-2">Edit</button>
             <button onclick="deleteEmployee('${e.id}')" class="text-red-500 text-xs font-medium">Delete</button>
           </div>
         </div>
@@ -417,6 +492,30 @@
       await refreshCache();
       renderStaff();
       toast('Employee deleted');
+    }
+
+    function openEditEmployee(id) {
+      const e = cache.employees.find(x => x.id === id);
+      if (!e) return;
+      document.getElementById('edit-emp-id').value = e.id;
+      document.getElementById('edit-emp-name').value = e.name || '';
+      document.getElementById('edit-emp-email').value = e.email || '';
+      document.getElementById('modal-edit-employee').classList.remove('hidden');
+    }
+    function closeEditEmployee() { document.getElementById('modal-edit-employee').classList.add('hidden'); }
+
+    async function saveEditEmployee() {
+      const id = document.getElementById('edit-emp-id').value;
+      const name = document.getElementById('edit-emp-name').value.trim();
+      const email = document.getElementById('edit-emp-email').value.trim();
+      if (!name) { toast('Name is required'); return; }
+      if (!email) { toast('Email is required'); return; }
+      const { error } = await supabase.from('employees').update({ name, email }).eq('id', id);
+      if (error) { toast('Error: ' + error.message); return; }
+      await refreshCache();
+      closeEditEmployee();
+      renderStaff();
+      toast('Employee updated');
     }
 
     function renderAssignList(selectedIds) {
@@ -637,6 +736,51 @@
       toast('Policy deleted');
     }
 
+    async function republishPolicy() {
+      if (!detailPolicyId) return;
+      const p = cache.policies.find(x => x.id === detailPolicyId);
+      if (!p) return;
+      const assigns = cache.assignments.filter(a => a.policy_id === detailPolicyId);
+      if (!assigns.length) { toast('No staff assigned. Edit policy to assign staff first.'); return; }
+
+      // Email pending staff (and optionally all - we email pending only, or all if user wants "again")
+      // User asked to publish again for new staff or after edit - so email anyone still pending
+      // Also allow emailing everyone again for re-confirmation of important updates
+      const sendToAll = confirm('Send emails to ALL assigned staff?\n\nOK = everyone\nCancel = only staff still Pending');
+      const targets = sendToAll ? assigns : assigns.filter(a => a.status === 'pending');
+      if (!targets.length) { toast('No one to email (all already confirmed). Use OK next time to email everyone.'); return; }
+
+      const emailItems = targets.map(a => {
+        const emp = cache.employees.find(e => e.id === a.employee_id);
+        return {
+          to: emp && emp.email ? emp.email : null,
+          name: emp ? emp.name : 'Staff',
+          policyTitle: p.title,
+          link: location.origin + location.pathname + '#confirm=' + a.token
+        };
+      }).filter(x => x.to);
+
+      if (!emailItems.length) { toast('No valid emails found'); return; }
+
+      document.getElementById('sending-overlay').classList.remove('hidden');
+      document.getElementById('sending-text').textContent = 'Sending ' + emailItems.length + ' email(s)...';
+      try {
+        const res = await fetch('/api/send-emails', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ emails: emailItems })
+        });
+        const data = await res.json();
+        document.getElementById('sending-overlay').classList.add('hidden');
+        if (res.ok) toast('Emails sent!');
+        else toast('Email failed: ' + (data.error || 'unknown'));
+      } catch (err) {
+        document.getElementById('sending-overlay').classList.add('hidden');
+        toast('Email sending failed');
+        console.error(err);
+      }
+    }
+
     // ========== EMPLOYEE ==========
     async function handleEmployeeLink(token) {
       await refreshCache();
@@ -709,6 +853,23 @@
           <h3 class="font-semibold text-gray-900 text-sm">${escapeHtml(item.policy.title)}</h3>
           <span class="text-xs text-gray-500">${fmt(item.assignment.confirmed_at)}</span></div>
           ${item.assignment.signature?`<img src="${item.assignment.signature}" class="max-h-20 border rounded-xl bg-white" />`:'<p class="text-xs text-gray-400">No signature</p>'}</div>`).join('');
+
+      // Library: all policies for reading
+      const libEl = document.getElementById('emp-library');
+      if (libEl) {
+        if (!cache.policies.length) {
+          libEl.innerHTML = '<div class="card py-12 text-center text-gray-400 text-sm">No policies in library</div>';
+        } else {
+          libEl.innerHTML = cache.policies.map(p => `
+            <div class="card p-4" onclick="openLibraryPolicy('${p.id}')">
+              <h3 class="font-semibold text-gray-900">${escapeHtml(p.title)}</h3>
+              ${p.deadline ? '<p class="text-xs text-gray-500 mt-1">Deadline: ' + escapeHtml(p.deadline) + '</p>' : ''}
+              <p class="text-sm text-gray-600 mt-2 line-clamp-2">${escapeHtml((p.content||'').substring(0,100))}…</p>
+              <div class="text-xs text-brand-purple font-medium mt-2">Read full policy →</div>
+            </div>
+          `).join('');
+        }
+      }
     }
 
     function openEmpPolicy(policyId) {
@@ -805,6 +966,8 @@
 
     document.getElementById('modal-detail').addEventListener('click', e => { if (e.target.id === 'modal-detail') closeDetail(); });
     document.getElementById('modal-emp-policy').addEventListener('click', e => { if (e.target.id === 'modal-emp-policy') closeEmpPolicy(); });
+    document.getElementById('modal-edit-employee').addEventListener('click', e => { if (e.target.id === 'modal-edit-employee') closeEditEmployee(); });
+    document.getElementById('modal-library-policy').addEventListener('click', e => { if (e.target.id === 'modal-library-policy') closeLibraryPolicy(); });
 
     init();
   </script>
