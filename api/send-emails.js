@@ -1,15 +1,21 @@
 // Vercel Serverless Function - sends policy confirmation emails via Resend
+// API key MUST come from Vercel Environment Variable: RESEND_API_KEY
 export default async function handler(req, res) {
-  // Only allow POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_9CD7d5ue_QGyrm7m5kX3zWZcsFWzmd3mf';
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
   const FROM_EMAIL = 'LAM Nail Spa <lamhub@lamnailspa.ca>';
 
+  if (!RESEND_API_KEY) {
+    return res.status(500).json({
+      error: 'RESEND_API_KEY is not set. Add it in Vercel → Settings → Environment Variables.'
+    });
+  }
+
   try {
-    const { emails } = req.body; // array of { to, name, policyTitle, link }
+    const { emails } = req.body;
 
     if (!emails || !Array.isArray(emails) || emails.length === 0) {
       return res.status(400).json({ error: 'No emails provided' });
@@ -70,6 +76,11 @@ export default async function handler(req, res) {
 
       const data = await response.json();
       results.push({ to, success: response.ok, data });
+    }
+
+    const failed = results.filter(r => !r.success);
+    if (failed.length === results.length) {
+      return res.status(500).json({ error: 'All emails failed', results });
     }
 
     return res.status(200).json({ ok: true, results });
