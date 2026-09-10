@@ -999,15 +999,18 @@
       const list = document.getElementById('tasks-list');
       const empty = document.getElementById('tasks-empty');
       if (!list) return;
-      if (!cache.tasks.length) {
+      // Hide completed tasks from Tasks tab (they appear in Library → Task)
+      const activeTasks = cache.tasks.filter(task => task.status !== 'completed');
+      if (!activeTasks.length) {
         list.innerHTML = '';
         empty.classList.remove('hidden');
+        empty.textContent = 'No active tasks. Completed tasks are in Library → Task.';
         return;
       }
       empty.classList.add('hidden');
-      list.innerHTML = cache.tasks.map(task => {
+      list.innerHTML = activeTasks.map(task => {
         const emp = cache.employees.find(e => e.id === task.assignee_id);
-        const statusColor = task.status === 'completed' ? 'text-green-600 bg-green-50' : task.status === 'denied' ? 'text-red-600 bg-red-50' : 'text-orange-600 bg-orange-50';
+        const statusColor = task.status === 'denied' ? 'text-red-600 bg-red-50' : 'text-orange-600 bg-orange-50';
         return `<div class="card p-4">
           <div class="flex justify-between items-start gap-2">
             <div>
@@ -1017,19 +1020,28 @@
             <span class="text-xs font-semibold px-2 py-1 rounded-full ${statusColor}">${escapeHtml(task.status)}</span>
           </div>
           ${task.description ? `<p class="text-sm text-gray-600 mt-2 line-clamp-2">${escapeHtml(task.description)}</p>` : ''}
-          ${(task.photo || task.complete_photo) ? `<div class="flex gap-2 mt-2 flex-wrap">
-            ${task.photo ? `<button type="button" onclick="viewTaskPhotos('${task.id}','before')" class="relative p-0 border-0 bg-transparent"><img src="${task.photo}" class="max-h-28 rounded-xl border" /><span class="absolute bottom-1 left-1 text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded">Before</span></button>` : ''}
-            ${task.complete_photo ? `<button type="button" onclick="viewTaskPhotos('${task.id}','after')" class="relative p-0 border-0 bg-transparent"><img src="${task.complete_photo}" class="max-h-28 rounded-xl border" /><span class="absolute bottom-1 left-1 text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded">After</span></button>` : ''}
-          </div>` : ''}
+          ${task.photo ? `<div class="mt-2"><button type="button" onclick="viewTaskPhotos('${task.id}','before')" class="relative p-0 border-0 bg-transparent"><img src="${task.photo}" class="max-h-28 rounded-xl border" /></button></div>` : ''}
           ${task.status === 'denied' && task.deny_reason ? `<p class="text-xs text-red-600 mt-2">Deny reason: ${escapeHtml(task.deny_reason)}</p>` : ''}
-          ${task.status === 'completed' && task.complete_comment ? `<p class="text-xs text-green-700 mt-2">Comment: ${escapeHtml(task.complete_comment)}</p>` : ''}
           <div class="flex flex-wrap gap-2 mt-3">
+            ${task.status === 'pending' || task.status === 'denied' ? `<button onclick="adminCompleteTask('${task.id}')" class="text-xs font-medium text-white bg-green-600 px-2.5 py-1.5 rounded-lg">Complete</button>` : ''}
             <button onclick="openEditTask('${task.id}')" class="text-xs font-medium text-brand-purple bg-purple-50 px-2.5 py-1.5 rounded-lg">Edit</button>
             <button onclick="openTransferTask('${task.id}')" class="text-xs font-medium text-gray-700 bg-gray-100 px-2.5 py-1.5 rounded-lg">Transfer</button>
             <button onclick="deleteTask('${task.id}')" class="text-xs font-medium text-red-600 bg-red-50 px-2.5 py-1.5 rounded-lg">Delete</button>
           </div>
         </div>`;
       }).join('');
+    }
+
+    async function adminCompleteTask(id) {
+      if (!confirm('Mark this task as complete? It will move to Library → Task.')) return;
+      const { error } = await supabase.from('tasks').update({
+        status: 'completed',
+        complete_comment: 'Completed by admin'
+      }).eq('id', id);
+      if (error) { toast(error.message); return; }
+      await refreshCache();
+      renderTasks();
+      toast('Task completed → Library');
     }
 
     function openEditTask(id) {
@@ -1445,7 +1457,63 @@
           </div>`;
       }
 
+      // Completed tasks folder
+      const completedTasks = cache.tasks.filter(task => task.status === 'completed');
+      if (completedTasks.length) {
+        const key = 'folder_tasks';
+        const open = !!libraryExpanded[key];
+        const icon = open ? '−' : '+';
+        html += `
+          <div class="card overflow-hidden">
+            <div class="px-4 py-3 bg-gray-50 border-b border-gray-100">
+              <button type="button" onclick="toggleLibraryFolder('${key}')" class="flex items-center gap-2 w-full text-left">
+                <span class="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-sm font-bold text-gray-700 flex-shrink-0">${icon}</span>
+                <span>✅</span>
+                <span class="font-semibold text-sm text-gray-900">Task</span>
+                <span class="text-xs text-gray-400">(${completedTasks.length})</span>
+              </button>
+            </div>
+            <div class="divide-y divide-gray-50 ${open ? '' : 'hidden'}">
+              ${completedTasks.map(task => {
+                const emp = cache.employees.find(e => e.id === task.assignee_id);
+                return `<div class="px-4 py-3">
+                  <div class="flex justify-between items-start gap-2">
+                    <div class="min-w-0 flex-1">
+                      <h3 class="font-medium text-sm text-gray-900">${escapeHtml(task.title)}</h3>
+                      <p class="text-xs text-gray-500 mt-0.5">${escapeHtml(emp ? emp.name : 'Staff')}${task.deadline ? ' · Due ' + task.deadline : ''}</p>
+                      ${task.description ? `<p class="text-xs text-gray-600 mt-1 line-clamp-2">${escapeHtml(task.description)}</p>` : ''}
+                      ${task.complete_comment ? `<p class="text-xs text-green-700 mt-1">${escapeHtml(task.complete_comment)}</p>` : ''}
+                    </div>
+                    <span class="text-[10px] font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full flex-shrink-0">Done</span>
+                  </div>
+                  ${(task.photo || task.complete_photo) ? `<div class="flex gap-2 mt-2 flex-wrap">
+                    ${task.photo ? `<button type="button" onclick="viewTaskPhotos('${task.id}','before')" class="relative p-0 border-0 bg-transparent"><img src="${task.photo}" class="max-h-24 rounded-xl border" /><span class="absolute bottom-1 left-1 text-[10px] bg-black/60 text-white px-1 rounded">Before</span></button>` : ''}
+                    ${task.complete_photo ? `<button type="button" onclick="viewTaskPhotos('${task.id}','after')" class="relative p-0 border-0 bg-transparent"><img src="${task.complete_photo}" class="max-h-24 rounded-xl border" /><span class="absolute bottom-1 left-1 text-[10px] bg-black/60 text-white px-1 rounded">After</span></button>` : ''}
+                  </div>` : ''}
+                  <div class="flex gap-2 mt-2">
+                    <button onclick="reopenTask('${task.id}')" class="text-xs font-medium text-gray-700 bg-gray-100 px-2.5 py-1.5 rounded-lg">Reopen</button>
+                    <button onclick="deleteTask('${task.id}')" class="text-xs font-medium text-red-600 bg-red-50 px-2.5 py-1.5 rounded-lg">Delete</button>
+                  </div>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>`;
+      }
+
       list.innerHTML = html || '';
+    }
+
+    async function reopenTask(id) {
+      if (!confirm('Move this task back to the Tasks tab as pending?')) return;
+      const { error } = await supabase.from('tasks').update({
+        status: 'pending',
+        complete_comment: null,
+        complete_photo: null
+      }).eq('id', id);
+      if (error) { toast(error.message); return; }
+      await refreshCache();
+      renderLibrary();
+      toast('Task reopened');
     }
 
     function libraryPolicyRow(p) {
