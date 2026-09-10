@@ -1,24 +1,24 @@
-LAM STAFF HUB - Deployment Instructions
-=======================================
+LAM HUB - Deployment
+====================
 
-FILES TO UPLOAD TO GITHUB (root of repo):
+Upload these to GitHub (repo root):
 - index.html
 - logo.jpg
-- api/send-emails.js   ← important! keep the "api" folder
+- manifest.json
+- vercel.json
+- icon-*.png, apple-touch-icon.png, favicon-32.png
+- api/ folder (all files inside)
 
-OPTIONAL (recommended for security):
-In Vercel project → Settings → Environment Variables
-Add:
-  Name:  RESEND_API_KEY
-  Value: re_9CD7d5ue_QGyrm7m5kX3zWZcsFWzmd3mf
+Vercel Environment Variables (Settings → Environment Variables):
+  RESEND_API_KEY     = your Resend API key (from resend.com)
+  ADMIN_PASSWORD     = bootstrap password (until you create an Admin staff)
+  SUPABASE_URL       = https://fvqguvzxgytsgcgqhcxx.supabase.co
+  SUPABASE_ANON_KEY  = your Supabase anon public key (optional for API routes)
 
-Then Redeploy.
+Never put API keys inside code or README — only in Vercel.
 
-HOW IT WORKS:
-1. Admin adds staff (Name + Email)
-2. Create Policy → assign staff → Publish
-3. System automatically emails every assigned staff with the confirmation link
-4. Staff open the link on any phone → sign → confirm
-5. Admin sees status update in Live tab
+After saving env vars → Redeploy.
 
-From email: lamhub@lamnailspa.ca
+Admin login:
+- First time: use ADMIN_PASSWORD, then create yourself in Staff as Role=Admin + password
+- Later: login with admin email + password

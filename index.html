@@ -1381,6 +1381,15 @@
       if (name === 'tasks') { fillTaskAssignees(); renderTasks(); }
     }
 
+    // Remember which folders are expanded (default: collapsed)
+    let libraryExpanded = JSON.parse(sessionStorage.getItem('lam_lib_expanded') || '{}');
+
+    function toggleLibraryFolder(key) {
+      libraryExpanded[key] = !libraryExpanded[key];
+      sessionStorage.setItem('lam_lib_expanded', JSON.stringify(libraryExpanded));
+      renderLibrary();
+    }
+
     function renderLibrary() {
       const list = document.getElementById('library-list');
       const empty = document.getElementById('library-empty');
@@ -1397,30 +1406,40 @@
 
       folders.forEach(f => {
         const pols = cache.policies.filter(p => p.folder_id === f.id);
+        const key = 'f_' + f.id;
+        const open = !!libraryExpanded[key];
+        const icon = open ? '−' : '+';
         html += `
           <div class="card overflow-hidden">
             <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100">
-              <div class="flex items-center gap-2">
+              <button type="button" onclick="toggleLibraryFolder('${key}')" class="flex items-center gap-2 flex-1 text-left min-w-0">
+                <span class="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-sm font-bold text-gray-700 flex-shrink-0">${icon}</span>
                 <span>📁</span>
-                <span class="font-semibold text-sm text-gray-900">${escapeHtml(f.name)}</span>
-                <span class="text-xs text-gray-400">(${pols.length})</span>
-              </div>
-              <button onclick="event.stopPropagation(); deleteFolder('${f.id}')" class="text-xs text-red-500 font-medium">Delete</button>
+                <span class="font-semibold text-sm text-gray-900 truncate">${escapeHtml(f.name)}</span>
+                <span class="text-xs text-gray-400 flex-shrink-0">(${pols.length})</span>
+              </button>
+              <button onclick="event.stopPropagation(); deleteFolder('${f.id}')" class="text-xs text-red-500 font-medium ml-2 flex-shrink-0">Delete</button>
             </div>
-            <div class="divide-y divide-gray-50">
+            <div class="divide-y divide-gray-50 ${open ? '' : 'hidden'}">
               ${pols.length ? pols.map(p => libraryPolicyRow(p)).join('') : '<p class="px-4 py-3 text-xs text-gray-400">Empty folder</p>'}
             </div>
           </div>`;
       });
 
       if (uncategorized.length) {
+        const key = 'uncategorized';
+        const open = !!libraryExpanded[key];
+        const icon = open ? '−' : '+';
         html += `
           <div class="card overflow-hidden">
             <div class="px-4 py-3 bg-gray-50 border-b border-gray-100">
-              <span class="font-semibold text-sm text-gray-700">Uncategorized</span>
-              <span class="text-xs text-gray-400 ml-1">(${uncategorized.length})</span>
+              <button type="button" onclick="toggleLibraryFolder('${key}')" class="flex items-center gap-2 w-full text-left">
+                <span class="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-sm font-bold text-gray-700 flex-shrink-0">${icon}</span>
+                <span class="font-semibold text-sm text-gray-700">Uncategorized</span>
+                <span class="text-xs text-gray-400">(${uncategorized.length})</span>
+              </button>
             </div>
-            <div class="divide-y divide-gray-50">
+            <div class="divide-y divide-gray-50 ${open ? '' : 'hidden'}">
               ${uncategorized.map(p => libraryPolicyRow(p)).join('')}
             </div>
           </div>`;
@@ -1897,9 +1916,21 @@
     function renderLive() {
       const list = document.getElementById('live-list');
       const empty = document.getElementById('live-empty');
-      if (!cache.policies.length) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
+      // Only show policies that still have pending confirmations (or unassigned)
+      const livePolicies = cache.policies.filter(p => {
+        const assigns = cache.assignments.filter(a => a.policy_id === p.id);
+        if (!assigns.length) return true; // not assigned yet — still show
+        const pending = assigns.some(a => a.status !== 'confirmed');
+        return pending;
+      });
+      if (!livePolicies.length) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        empty.innerHTML = 'No live policies.<br>All assigned policies are fully confirmed, or create a new one.';
+        return;
+      }
       empty.classList.add('hidden');
-      list.innerHTML = cache.policies.map(p => {
+      list.innerHTML = livePolicies.map(p => {
         const assigns = cache.assignments.filter(a => a.policy_id === p.id);
         const confirmed = assigns.filter(a => a.status === 'confirmed').length;
         const total = assigns.length;
